@@ -3,7 +3,9 @@ export type ProtocolCategory =
   | 'dex'
   | 'liquid-staking'
   | 'yield-aggregator'
-  | 'derivatives';
+  | 'derivatives'
+  | 'restaking'
+  | 'cdp';
 
 export interface ProtocolInfo {
   id: string;

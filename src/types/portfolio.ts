@@ -10,7 +10,11 @@ export type PositionType =
   | 'stake'
   | 'vault'
   | 'collateral'
-  | 'wallet';
+  | 'wallet'
+  | 'restake'
+  | 'savings'
+  | 'farm'
+  | 'locked';
 
 export interface YieldInfo {
   apy: number;

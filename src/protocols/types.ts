@@ -34,5 +34,5 @@ export interface IProtocolAdapter {
 }
 
 export interface ProtocolAddresses {
-  [key: string]: Address;
+  [key: string]: Address | unknown;
 }
