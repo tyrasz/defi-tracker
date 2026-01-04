@@ -1,0 +1,98 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { isAddress } from 'viem';
+import { portfolioAggregator } from '@/core/aggregator';
+import { yieldAnalyzer } from '@/core/yield';
+import { priceFetcher } from '@/core/pricing';
+import { serializeBigInts } from '@/lib/utils/serialize';
+import type { ChainId } from '@/types/chain';
+
+interface RouteParams {
+  params: Promise<{ address: string }>;
+}
+
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  const { address } = await params;
+
+  // Validate address
+  if (!isAddress(address)) {
+    return NextResponse.json(
+      { success: false, error: 'Invalid Ethereum address' },
+      { status: 400 }
+    );
+  }
+
+  // Parse query params
+  const searchParams = request.nextUrl.searchParams;
+  const chainsParam = searchParams.get('chains');
+  const includeYieldAnalysis = searchParams.get('yieldAnalysis') !== 'false';
+
+  // Parse chain IDs if provided
+  let chainIds: ChainId[] | undefined;
+  if (chainsParam) {
+    chainIds = chainsParam.split(',').map(Number) as ChainId[];
+  }
+
+  try {
+    // Fetch portfolio
+    const portfolio = await portfolioAggregator.getPortfolio(
+      address as `0x${string}`,
+      chainIds
+    );
+
+    // Enrich with prices
+    await priceFetcher.enrichPositionsWithPrices(portfolio.positions);
+
+    // Recalculate USD values after price enrichment
+    portfolio.totalValueUsd = portfolio.positions.reduce(
+      (sum, p) => sum + p.valueUsd,
+      0
+    );
+
+    // Update chain and protocol totals
+    for (const chainId of Object.keys(portfolio.byChain)) {
+      const chain = portfolio.byChain[Number(chainId) as ChainId];
+      chain.totalValueUsd = chain.positions.reduce(
+        (sum, p) => sum + p.valueUsd,
+        0
+      );
+    }
+
+    for (const protocolId of Object.keys(portfolio.byProtocol)) {
+      const protocol = portfolio.byProtocol[protocolId];
+      protocol.totalValueUsd = protocol.positions.reduce(
+        (sum, p) => sum + p.valueUsd,
+        0
+      );
+    }
+
+    // Optional yield analysis
+    let yieldAnalysis = null;
+    if (includeYieldAnalysis && portfolio.positions.length > 0) {
+      yieldAnalysis = await yieldAnalyzer.analyzePortfolio(
+        portfolio.positions,
+        address as `0x${string}`
+      );
+    }
+
+    return NextResponse.json(
+      serializeBigInts({
+        success: true,
+        data: {
+          ...portfolio,
+          yieldAnalysis,
+        },
+      })
+    );
+  } catch (error) {
+    console.error('Portfolio fetch error:', error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to fetch portfolio',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
+  }
+}
