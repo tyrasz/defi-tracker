@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { Portfolio } from '@/types/portfolio';
 import type { YieldAnalysis } from '@/types/yield';
@@ -25,12 +26,9 @@ function formatPercent(value: number): string {
   return `${(value * 100).toFixed(2)}%`;
 }
 
-export default function DashboardPage({
-  params,
-}: {
-  params: Promise<{ address: string }>;
-}) {
-  const { address } = use(params);
+export default function DashboardPage() {
+  const params = useParams();
+  const address = params.address as string;
   const [data, setData] = useState<PortfolioResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
