@@ -197,7 +197,7 @@ class YieldAnalyzer {
     if (normalize(symbol1) === normalize(symbol2)) return true;
 
     // Stablecoin equivalents
-    const stablecoins = ['USDC', 'USDT', 'DAI', 'FRAX', 'LUSD'];
+    const stablecoins = ['USDC', 'USDT', 'DAI', 'FRAX', 'LUSD', 'USDS', 'USDE'];
     if (
       stablecoins.includes(normalize(symbol1)) &&
       stablecoins.includes(normalize(symbol2))

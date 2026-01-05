@@ -72,7 +72,7 @@ class PriceFetcher {
     }
 
     // Handle stablecoins with assumed $1 price
-    const stablecoins = ['USDC', 'USDT', 'DAI', 'FRAX', 'LUSD', 'BUSD'];
+    const stablecoins = ['USDC', 'USDT', 'DAI', 'FRAX', 'LUSD', 'BUSD', 'USDS', 'USDE'];
     if (stablecoins.includes(symbol.toUpperCase())) {
       this.setCachedPrice(address, chainId, 1);
       return {

@@ -21,6 +21,9 @@ export interface ChainConfig {
     weth?: `0x${string}`;
     usdc?: `0x${string}`;
     usdt?: `0x${string}`;
+    dai?: `0x${string}`;
+    usds?: `0x${string}`;
+    usde?: `0x${string}`;
   };
 }
 

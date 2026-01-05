@@ -3,6 +3,7 @@ import { isAddress } from 'viem';
 import { portfolioAggregator } from '@/core/aggregator';
 import { yieldAnalyzer } from '@/core/yield';
 import { priceFetcher } from '@/core/pricing';
+import { walletBalanceFetcher } from '@/core/wallet';
 import { serializeBigInts } from '@/lib/utils/serialize';
 import type { ChainId } from '@/types/chain';
 
@@ -65,14 +66,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Optional yield analysis
-    let yieldAnalysis = null;
-    if (includeYieldAnalysis && portfolio.positions.length > 0) {
-      yieldAnalysis = await yieldAnalyzer.analyzePortfolio(
-        portfolio.positions,
-        address as `0x${string}`
-      );
-    }
+    // Fetch wallet balances (ETH + stablecoins) in parallel with yield analysis
+    const [yieldAnalysis, walletBalances] = await Promise.all([
+      includeYieldAnalysis && portfolio.positions.length > 0
+        ? yieldAnalyzer.analyzePortfolio(
+            portfolio.positions,
+            address as `0x${string}`
+          )
+        : Promise.resolve(null),
+      walletBalanceFetcher.getBalances(address as `0x${string}`),
+    ]);
 
     return NextResponse.json(
       serializeBigInts({
@@ -80,6 +83,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         data: {
           ...portfolio,
           yieldAnalysis,
+          walletBalances,
         },
       })
     );

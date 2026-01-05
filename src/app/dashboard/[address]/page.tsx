@@ -5,10 +5,14 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { Portfolio } from '@/types/portfolio';
 import type { YieldAnalysis } from '@/types/yield';
+import type { WalletBalances } from '@/core/wallet';
 
 interface PortfolioResponse {
   success: boolean;
-  data: Portfolio & { yieldAnalysis: YieldAnalysis | null };
+  data: Portfolio & {
+    yieldAnalysis: YieldAnalysis | null;
+    walletBalances: WalletBalances | null;
+  };
   error?: string;
   message?: string;
 }
@@ -125,8 +129,13 @@ export default function DashboardPage() {
 
   const { data: portfolio } = data;
 
-  // Handle empty portfolio
+  // Handle empty portfolio (but still show wallet balances if any)
   if (!portfolio.positions || portfolio.positions.length === 0) {
+    const hasWalletBalances =
+      portfolio.walletBalances &&
+      portfolio.walletBalances.balances.length > 0 &&
+      portfolio.walletBalances.totalValueUsd > 0;
+
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
@@ -134,7 +143,7 @@ export default function DashboardPage() {
           <p className="text-gray-400 font-mono text-sm">{address}</p>
         </div>
 
-        <div className="text-center py-16">
+        <div className="text-center py-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-800 mb-4">
             <svg
               className="w-8 h-8 text-gray-500"
@@ -172,6 +181,76 @@ export default function DashboardPage() {
             </a>
           </div>
         </div>
+
+        {/* Show wallet balances even without DeFi positions */}
+        {hasWalletBalances && portfolio.walletBalances && (
+          <div className="mb-8 p-6 bg-gray-900 rounded-lg border border-gray-800">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Idle Wallet Balances</h2>
+              <p className="text-lg font-semibold text-yellow-400">
+                {formatUsd(portfolio.walletBalances.totalValueUsd)}
+              </p>
+            </div>
+            <p className="text-sm text-gray-400 mb-4">
+              You have assets that could be earning yield in DeFi protocols
+            </p>
+
+            <div className="space-y-4">
+              {portfolio.walletBalances.balances.map((chainBalance) => (
+                <div
+                  key={chainBalance.chainId}
+                  className="p-4 bg-gray-950 rounded border border-gray-800"
+                >
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="font-medium">{chainBalance.chainName}</h3>
+                    <span className="text-sm text-gray-400">
+                      {formatUsd(chainBalance.totalValueUsd)}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {chainBalance.balances.map((token) => (
+                      <div
+                        key={`${chainBalance.chainId}-${token.symbol}`}
+                        className="flex justify-between items-center py-2 border-t border-gray-800 first:border-t-0"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="font-medium">{token.symbol}</span>
+                          <span className="text-sm text-gray-400">
+                            {parseFloat(token.balanceFormatted).toLocaleString(undefined, {
+                              maximumFractionDigits: 4,
+                            })}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">{formatUsd(token.valueUsd)}</p>
+                          {token.symbol === 'ETH' ? (
+                            <p className="text-xs text-blue-400">
+                              Stake on Lido for ~3.5% APY
+                            </p>
+                          ) : (
+                            <p className="text-xs text-blue-400">
+                              Supply on Aave for ~3-5% APY
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 p-3 bg-green-900/20 border border-green-800 rounded">
+              <p className="text-sm text-green-300">
+                <span className="font-medium">Get Started:</span> You could earn approximately{' '}
+                <span className="font-semibold text-green-400">
+                  {formatUsd(portfolio.walletBalances.totalValueUsd * 0.035)}
+                </span>
+                /year by putting these assets to work in DeFi protocols like Aave or Lido.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="mt-8 p-6 bg-gray-900 rounded-lg border border-gray-800">
           <h3 className="font-semibold mb-3">Supported Protocols</h3>
@@ -290,6 +369,78 @@ export default function DashboardPage() {
           )}
         </div>
       )}
+
+      {/* Idle Wallet Balances */}
+      {portfolio.walletBalances &&
+        portfolio.walletBalances.balances.length > 0 &&
+        portfolio.walletBalances.totalValueUsd > 0 && (
+          <div className="mb-8 p-6 bg-gray-900 rounded-lg border border-gray-800">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Idle Wallet Balances</h2>
+              <p className="text-lg font-semibold text-yellow-400">
+                {formatUsd(portfolio.walletBalances.totalValueUsd)}
+              </p>
+            </div>
+            <p className="text-sm text-gray-400 mb-4">
+              These tokens are sitting idle in your wallet and could be earning yield
+            </p>
+
+            <div className="space-y-4">
+              {portfolio.walletBalances.balances.map((chainBalance) => (
+                <div
+                  key={chainBalance.chainId}
+                  className="p-4 bg-gray-950 rounded border border-gray-800"
+                >
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="font-medium">{chainBalance.chainName}</h3>
+                    <span className="text-sm text-gray-400">
+                      {formatUsd(chainBalance.totalValueUsd)}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {chainBalance.balances.map((token) => (
+                      <div
+                        key={`${chainBalance.chainId}-${token.symbol}`}
+                        className="flex justify-between items-center py-2 border-t border-gray-800 first:border-t-0"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="font-medium">{token.symbol}</span>
+                          <span className="text-sm text-gray-400">
+                            {parseFloat(token.balanceFormatted).toLocaleString(undefined, {
+                              maximumFractionDigits: 4,
+                            })}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">{formatUsd(token.valueUsd)}</p>
+                          {token.symbol === 'ETH' ? (
+                            <p className="text-xs text-blue-400">
+                              Stake on Lido for ~3.5% APY
+                            </p>
+                          ) : (
+                            <p className="text-xs text-blue-400">
+                              Supply on Aave for ~3-5% APY
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 p-3 bg-blue-900/20 border border-blue-800 rounded">
+              <p className="text-sm text-blue-300">
+                <span className="font-medium">Tip:</span> You could earn approximately{' '}
+                <span className="font-semibold text-blue-400">
+                  {formatUsd(portfolio.walletBalances.totalValueUsd * 0.035)}
+                </span>
+                /year by putting these assets to work in DeFi protocols.
+              </p>
+            </div>
+          </div>
+        )}
 
       {/* Positions by Protocol */}
       {Object.keys(portfolio.byProtocol).length > 0 && (
