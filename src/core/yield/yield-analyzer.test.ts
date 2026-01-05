@@ -24,6 +24,166 @@ vi.mock('@/protocols', () => ({
 describe('YieldAnalyzer', () => {
   const mockAddress = '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb' as const;
 
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('analyzePortfolio', () => {
+    it('should analyze portfolio and return yield analysis', async () => {
+      const mockPositions: Position[] = [
+        {
+          id: '1',
+          protocol: { id: 'aave-v3', name: 'Aave V3', category: 'lending', website: '' },
+          chainId: 1,
+          type: 'supply',
+          tokens: [{
+            address: mockAddress,
+            symbol: 'USDC',
+            decimals: 6,
+            balance: 10000000000n,
+            balanceFormatted: '10000',
+            priceUsd: 1,
+            valueUsd: 10000,
+          }],
+          valueUsd: 10000,
+          yield: { apy: 0.03, apr: 0.03 },
+        },
+        {
+          id: '2',
+          protocol: { id: 'wallet', name: 'Wallet', category: 'wallet', website: '' },
+          chainId: 1,
+          type: 'wallet',
+          tokens: [{
+            address: mockAddress,
+            symbol: 'DAI',
+            decimals: 18,
+            balance: 5000000000000000000000n,
+            balanceFormatted: '5000',
+            priceUsd: 1,
+            valueUsd: 5000,
+          }],
+          valueUsd: 5000,
+        },
+      ];
+
+      const mockYieldRate: YieldRate = {
+        protocol: 'compound-v3',
+        chainId: 1,
+        asset: mockAddress,
+        assetSymbol: 'USDC',
+        type: 'supply',
+        apy: 0.06,
+        apr: 0.06,
+      };
+
+      const { protocolRegistry } = await import('@/protocols');
+      const mockAdapter = {
+        protocol: { name: 'Compound V3', id: 'compound-v3' },
+        getYieldRates: vi.fn(() => Promise.resolve([mockYieldRate])),
+      };
+      vi.mocked(protocolRegistry.getAdaptersForChain).mockReturnValue([mockAdapter] as any);
+
+      const analysis = await yieldAnalyzer.analyzePortfolio(mockPositions, mockAddress);
+
+      expect(analysis.address).toBe(mockAddress);
+      expect(analysis.totalCurrentYield).toBe(300); // 10000 * 0.03
+      expect(analysis.totalPotentialYield).toBeGreaterThan(300);
+      expect(analysis.opportunities.length).toBeGreaterThan(0);
+      expect(analysis.idleAssets.length).toBeGreaterThan(0);
+      expect(analysis.analyzedAt).toBeGreaterThan(0);
+    });
+
+    it('should handle empty positions', async () => {
+      const analysis = await yieldAnalyzer.analyzePortfolio([], mockAddress);
+
+      expect(analysis.address).toBe(mockAddress);
+      expect(analysis.totalCurrentYield).toBe(0);
+      expect(analysis.totalPotentialYield).toBe(0);
+      expect(analysis.opportunities).toEqual([]);
+      expect(analysis.idleAssets).toEqual([]);
+    });
+  });
+
+  describe('fetchAllYieldRates', () => {
+    it('should fetch yield rates from all chains and adapters', async () => {
+      const { chainRegistry } = await import('@/chains');
+      const { protocolRegistry } = await import('@/protocols');
+
+      vi.mocked(chainRegistry.getSupportedChainIds).mockReturnValue([1, 42161]);
+
+      const mockYieldRate: YieldRate = {
+        protocol: 'aave-v3',
+        chainId: 1,
+        asset: mockAddress,
+        assetSymbol: 'USDC',
+        type: 'supply',
+        apy: 0.05,
+        apr: 0.05,
+      };
+
+      const mockAdapter = {
+        protocol: { name: 'Aave V3', id: 'aave-v3' },
+        getYieldRates: vi.fn(() => Promise.resolve([mockYieldRate])),
+      };
+
+      vi.mocked(protocolRegistry.getAdaptersForChain).mockReturnValue([mockAdapter] as any);
+
+      const fetchAllYieldRates = (yieldAnalyzer as any).fetchAllYieldRates.bind(yieldAnalyzer);
+      const rates = await fetchAllYieldRates();
+
+      expect(rates.length).toBeGreaterThan(0);
+      expect(rates[0]).toMatchObject(mockYieldRate);
+    });
+
+    it('should handle adapter errors gracefully', async () => {
+      const { chainRegistry } = await import('@/chains');
+      const { protocolRegistry } = await import('@/protocols');
+
+      vi.mocked(chainRegistry.getSupportedChainIds).mockReturnValue([1]);
+
+      const failingAdapter = {
+        protocol: { name: 'Failing', id: 'failing' },
+        getYieldRates: vi.fn(() => Promise.reject(new Error('RPC Error'))),
+      };
+
+      vi.mocked(protocolRegistry.getAdaptersForChain).mockReturnValue([failingAdapter] as any);
+
+      const fetchAllYieldRates = (yieldAnalyzer as any).fetchAllYieldRates.bind(yieldAnalyzer);
+      const rates = await fetchAllYieldRates();
+
+      expect(rates).toEqual([]);
+    });
+  });
+
+  describe('calculatePotentialYield', () => {
+    const calculatePotentialYield = (positions: Position[], opportunities: any[]) => {
+      return (yieldAnalyzer as any).calculatePotentialYield(positions, opportunities);
+    };
+
+    it('should calculate potential yield with opportunities', () => {
+      const positions: Position[] = [
+        {
+          id: '1',
+          protocol: { id: 'aave-v3', name: 'Aave V3', category: 'lending', website: '' },
+          chainId: 1,
+          type: 'supply',
+          tokens: [],
+          valueUsd: 10000,
+          yield: { apy: 0.03, apr: 0.03 },
+        },
+      ];
+
+      const opportunities = [
+        {
+          potentialGainUsd: 200,
+        },
+      ];
+
+      const result = calculatePotentialYield(positions, opportunities);
+      expect(result).toBe(500); // 300 (current) + 200 (opportunity gain)
+    });
+  });
+
   describe('asset equivalency', () => {
     // Access the private method through reflection for testing
     const isEquivalentAsset = (s1: string, s2: string) => {
