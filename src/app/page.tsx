@@ -76,9 +76,9 @@ export default function Home() {
           </p>
         </div>
         <div className="p-6 bg-gray-900 rounded-lg border border-gray-800">
-          <h3 className="text-lg font-semibold mb-2">7 Protocols</h3>
+          <h3 className="text-lg font-semibold mb-2">19 Protocols</h3>
           <p className="text-gray-400 text-sm">
-            Aave, Compound, Lido, Rocket Pool, Uniswap, Curve, Yearn
+            DeFi, RWA, and tokenized securities including Aave, Lido, Pendle, Ondo, and more
           </p>
         </div>
         <div className="p-6 bg-gray-900 rounded-lg border border-gray-800">
