@@ -7,7 +7,8 @@ export type ProtocolCategory =
   | 'restaking'
   | 'cdp'
   | 'fixed-yield'
-  | 'rwa';
+  | 'rwa'
+  | 'tokenized-securities';
 
 export interface ProtocolInfo {
   id: string;
@@ -31,4 +32,4 @@ export const YIELD_CATEGORIES: ProtocolCategory[] = [
 ];
 
 /** Categories that are position tracking only (fees, not yield) */
-export const TRACKING_CATEGORIES: ProtocolCategory[] = ['dex', 'derivatives'];
+export const TRACKING_CATEGORIES: ProtocolCategory[] = ['dex', 'derivatives', 'tokenized-securities'];

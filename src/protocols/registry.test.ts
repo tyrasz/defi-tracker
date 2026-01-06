@@ -3,9 +3,9 @@ import { protocolRegistry } from './registry';
 
 describe('ProtocolRegistry', () => {
   describe('getAllAdapters', () => {
-    it('should return all 15 registered adapters', () => {
+    it('should return all 19 registered adapters', () => {
       const adapters = protocolRegistry.getAllAdapters();
-      expect(adapters).toHaveLength(15);
+      expect(adapters).toHaveLength(19);
     });
 
     it('should include all expected protocols', () => {
@@ -27,6 +27,10 @@ describe('ProtocolRegistry', () => {
       expect(protocolIds).toContain('pendle');
       expect(protocolIds).toContain('ondo');
       expect(protocolIds).toContain('mountain');
+      expect(protocolIds).toContain('backed-rwa');
+      expect(protocolIds).toContain('hashnote');
+      expect(protocolIds).toContain('superstate');
+      expect(protocolIds).toContain('backed-stocks');
     });
   });
 

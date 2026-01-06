@@ -23,6 +23,11 @@ import { PendleAdapter } from './fixed-yield/pendle';
 // RWA
 import { OndoAdapter } from './rwa/ondo';
 import { MountainAdapter } from './rwa/mountain';
+import { BackedRwaAdapter } from './rwa/backed';
+import { HashnoteAdapter } from './rwa/hashnote';
+import { SuperstateAdapter } from './rwa/superstate';
+// Tokenized Securities
+import { BackedStocksAdapter } from './tokenized-securities/backed-stocks';
 
 class ProtocolRegistry {
   private adapters: Map<string, IProtocolAdapter> = new Map();
@@ -51,6 +56,11 @@ class ProtocolRegistry {
     // RWA
     this.registerAdapter(new OndoAdapter());
     this.registerAdapter(new MountainAdapter());
+    this.registerAdapter(new BackedRwaAdapter());
+    this.registerAdapter(new HashnoteAdapter());
+    this.registerAdapter(new SuperstateAdapter());
+    // Tokenized Securities
+    this.registerAdapter(new BackedStocksAdapter());
   }
 
   registerAdapter(adapter: IProtocolAdapter): void {

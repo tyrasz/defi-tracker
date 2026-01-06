@@ -269,8 +269,26 @@ export default function DashboardPage() {
               <div>Sky (Maker)</div>
               <div>EigenLayer</div>
               <div>Pendle</div>
-              <div>Ondo</div>
-              <div>Mountain</div>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <h4 className="text-sm text-purple-400 mb-2">Real World Assets (RWA)</h4>
+            <p className="text-xs text-gray-500 mb-2">Treasury-backed yield tokens</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm text-gray-400">
+              <div>Ondo (USDY, OUSG)</div>
+              <div>Mountain (USDM)</div>
+              <div>Backed (bIB01)</div>
+              <div>Hashnote (USYC)</div>
+              <div>Superstate (USTB)</div>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <h4 className="text-sm text-yellow-400 mb-2">Tokenized Securities</h4>
+            <p className="text-xs text-gray-500 mb-2">Tokenized stocks and ETFs</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm text-gray-400">
+              <div>Backed Stocks</div>
             </div>
           </div>
 

@@ -13,3 +13,7 @@ export { YearnV3Adapter } from './yield-aggregator/yearn-v3';
 export { PendleAdapter } from './fixed-yield/pendle';
 export { OndoAdapter } from './rwa/ondo';
 export { MountainAdapter } from './rwa/mountain';
+export { BackedRwaAdapter } from './rwa/backed';
+export { HashnoteAdapter } from './rwa/hashnote';
+export { SuperstateAdapter } from './rwa/superstate';
+export { BackedStocksAdapter } from './tokenized-securities/backed-stocks';

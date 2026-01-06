@@ -16,7 +16,8 @@ export type PositionType =
   | 'farm'
   | 'locked'
   | 'fixed-yield'
-  | 'rwa';
+  | 'rwa'
+  | 'tokenized-stock';
 
 export interface YieldInfo {
   apy: number;
