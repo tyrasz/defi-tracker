@@ -19,6 +19,7 @@ export class SparkAdapter extends BaseProtocolAdapter {
     name: 'Spark',
     category: 'lending',
     website: 'https://spark.fi',
+    earnsYield: true,
   };
 
   readonly supportedChains: ChainId[] = [1]; // Ethereum mainnet only

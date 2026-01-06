@@ -14,6 +14,7 @@ export class MorphoAdapter extends BaseProtocolAdapter {
     name: 'Morpho',
     category: 'lending',
     website: 'https://morpho.org',
+    earnsYield: true,
   };
 
   readonly supportedChains: ChainId[] = [1, 8453]; // Ethereum and Base

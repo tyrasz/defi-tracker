@@ -14,6 +14,7 @@ export class MakerAdapter extends BaseProtocolAdapter {
     name: 'Sky (Maker)',
     category: 'cdp',
     website: 'https://sky.money',
+    earnsYield: true,
   };
 
   readonly supportedChains: ChainId[] = [1]; // Ethereum mainnet only

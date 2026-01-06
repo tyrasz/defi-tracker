@@ -16,6 +16,7 @@ export class CompoundV3Adapter extends BaseProtocolAdapter {
     name: 'Compound V3',
     category: 'lending',
     website: 'https://compound.finance',
+    earnsYield: true,
   };
 
   readonly supportedChains: ChainId[] = [1, 42161, 10, 8453];

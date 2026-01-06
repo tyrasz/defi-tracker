@@ -14,6 +14,7 @@ export class ConvexAdapter extends BaseProtocolAdapter {
     name: 'Convex Finance',
     category: 'yield-aggregator',
     website: 'https://www.convexfinance.com',
+    earnsYield: true,
   };
 
   readonly supportedChains: ChainId[] = [1]; // Ethereum mainnet only

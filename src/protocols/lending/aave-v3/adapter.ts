@@ -19,6 +19,7 @@ export class AaveV3Adapter extends BaseProtocolAdapter {
     name: 'Aave V3',
     category: 'lending',
     website: 'https://aave.com',
+    earnsYield: true,
   };
 
   readonly supportedChains: ChainId[] = [1, 42161, 10, 8453];

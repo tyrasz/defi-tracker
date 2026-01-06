@@ -14,6 +14,7 @@ export class YearnV3Adapter extends BaseProtocolAdapter {
     name: 'Yearn V3',
     category: 'yield-aggregator',
     website: 'https://yearn.fi',
+    earnsYield: true,
   };
 
   readonly supportedChains: ChainId[] = [1, 42161];

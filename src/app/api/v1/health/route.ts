@@ -34,6 +34,7 @@ export async function GET() {
       id: p.protocol.id,
       name: p.protocol.name,
       category: p.protocol.category,
+      earnsYield: p.protocol.earnsYield,
       supportedChains: p.supportedChains,
     })),
   });

@@ -14,6 +14,7 @@ export class LidoAdapter extends BaseProtocolAdapter {
     name: 'Lido',
     category: 'liquid-staking',
     website: 'https://lido.fi',
+    earnsYield: true,
   };
 
   readonly supportedChains: ChainId[] = [1, 42161, 10, 8453];

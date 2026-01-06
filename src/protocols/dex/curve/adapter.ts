@@ -14,6 +14,7 @@ export class CurveAdapter extends BaseProtocolAdapter {
     name: 'Curve Finance',
     category: 'dex',
     website: 'https://curve.fi',
+    earnsYield: false,
   };
 
   readonly supportedChains: ChainId[] = [1, 42161, 10];

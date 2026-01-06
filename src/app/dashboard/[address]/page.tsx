@@ -253,15 +253,31 @@ export default function DashboardPage() {
         )}
 
         <div className="mt-8 p-6 bg-gray-900 rounded-lg border border-gray-800">
-          <h3 className="font-semibold mb-3">Supported Protocols</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-400">
-            <div>Aave V3</div>
-            <div>Compound V3</div>
-            <div>Lido</div>
-            <div>Rocket Pool</div>
-            <div>Uniswap V3</div>
-            <div>Curve</div>
-            <div>Yearn V3</div>
+          <h3 className="font-semibold mb-4">Supported Protocols</h3>
+
+          <div className="mb-4">
+            <h4 className="text-sm text-green-400 mb-2">Yield Earning</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm text-gray-400">
+              <div>Aave V3</div>
+              <div>Compound V3</div>
+              <div>Spark</div>
+              <div>Morpho</div>
+              <div>Lido</div>
+              <div>Rocket Pool</div>
+              <div>Yearn V3</div>
+              <div>Convex</div>
+              <div>Sky (Maker)</div>
+              <div>EigenLayer</div>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-sm text-blue-400 mb-2">Position Tracking</h4>
+            <p className="text-xs text-gray-500 mb-2">LP positions (earns fees, not yield)</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm text-gray-400">
+              <div>Uniswap V3</div>
+              <div>Curve</div>
+            </div>
           </div>
         </div>
       </div>

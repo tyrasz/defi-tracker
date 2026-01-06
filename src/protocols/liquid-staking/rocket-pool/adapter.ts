@@ -14,6 +14,7 @@ export class RocketPoolAdapter extends BaseProtocolAdapter {
     name: 'Rocket Pool',
     category: 'liquid-staking',
     website: 'https://rocketpool.net',
+    earnsYield: true,
   };
 
   readonly supportedChains: ChainId[] = [1, 42161, 10, 8453];

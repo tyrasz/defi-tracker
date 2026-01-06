@@ -23,6 +23,7 @@ export class UniswapV3Adapter extends BaseProtocolAdapter {
     name: 'Uniswap V3',
     category: 'dex',
     website: 'https://uniswap.org',
+    earnsYield: false,
   };
 
   readonly supportedChains: ChainId[] = [1, 42161, 10, 8453];

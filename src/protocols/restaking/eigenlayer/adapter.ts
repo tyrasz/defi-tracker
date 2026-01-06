@@ -13,6 +13,7 @@ export class EigenLayerAdapter extends BaseProtocolAdapter {
     name: 'EigenLayer',
     category: 'restaking' as const,
     website: 'https://eigenlayer.xyz',
+    earnsYield: true,
   };
 
   readonly supportedChains: ChainId[] = [1]; // Ethereum mainnet only
