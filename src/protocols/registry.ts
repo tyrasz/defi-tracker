@@ -18,6 +18,11 @@ import { YearnV3Adapter } from './yield-aggregator/yearn-v3';
 import { ConvexAdapter } from './yield-aggregator/convex';
 // CDP
 import { MakerAdapter } from './cdp/maker';
+// Fixed Yield
+import { PendleAdapter } from './fixed-yield/pendle';
+// RWA
+import { OndoAdapter } from './rwa/ondo';
+import { MountainAdapter } from './rwa/mountain';
 
 class ProtocolRegistry {
   private adapters: Map<string, IProtocolAdapter> = new Map();
@@ -41,6 +46,11 @@ class ProtocolRegistry {
     this.registerAdapter(new ConvexAdapter());
     // CDP
     this.registerAdapter(new MakerAdapter());
+    // Fixed Yield
+    this.registerAdapter(new PendleAdapter());
+    // RWA
+    this.registerAdapter(new OndoAdapter());
+    this.registerAdapter(new MountainAdapter());
   }
 
   registerAdapter(adapter: IProtocolAdapter): void {

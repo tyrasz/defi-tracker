@@ -10,3 +10,6 @@ export { RocketPoolAdapter } from './liquid-staking/rocket-pool';
 export { UniswapV3Adapter } from './dex/uniswap-v3';
 export { CurveAdapter } from './dex/curve';
 export { YearnV3Adapter } from './yield-aggregator/yearn-v3';
+export { PendleAdapter } from './fixed-yield/pendle';
+export { OndoAdapter } from './rwa/ondo';
+export { MountainAdapter } from './rwa/mountain';

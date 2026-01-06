@@ -5,7 +5,9 @@ export type ProtocolCategory =
   | 'yield-aggregator'
   | 'derivatives'
   | 'restaking'
-  | 'cdp';
+  | 'cdp'
+  | 'fixed-yield'
+  | 'rwa';
 
 export interface ProtocolInfo {
   id: string;
@@ -24,6 +26,8 @@ export const YIELD_CATEGORIES: ProtocolCategory[] = [
   'yield-aggregator',
   'restaking',
   'cdp',
+  'fixed-yield',
+  'rwa',
 ];
 
 /** Categories that are position tracking only (fees, not yield) */

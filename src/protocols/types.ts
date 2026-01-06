@@ -12,6 +12,7 @@ export interface YieldRate {
   apy: number;
   apr: number;
   tvl?: number;
+  metadata?: Record<string, unknown>;
 }
 
 export interface IProtocolAdapter {

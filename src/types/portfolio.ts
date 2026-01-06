@@ -14,7 +14,9 @@ export type PositionType =
   | 'restake'
   | 'savings'
   | 'farm'
-  | 'locked';
+  | 'locked'
+  | 'fixed-yield'
+  | 'rwa';
 
 export interface YieldInfo {
   apy: number;

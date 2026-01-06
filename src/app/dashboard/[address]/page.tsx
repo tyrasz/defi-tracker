@@ -268,6 +268,9 @@ export default function DashboardPage() {
               <div>Convex</div>
               <div>Sky (Maker)</div>
               <div>EigenLayer</div>
+              <div>Pendle</div>
+              <div>Ondo</div>
+              <div>Mountain</div>
             </div>
           </div>
 
