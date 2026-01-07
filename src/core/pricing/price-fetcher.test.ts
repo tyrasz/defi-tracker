@@ -69,10 +69,10 @@ describe('PriceFetcher', () => {
       const stethResult = await priceFetcher.getPrice(mockClient, addr2, 'STETH', 1);
       expect(stethResult.priceUsd).toBe(2500);
 
-      // rETH should have 1.0x premium
+      // rETH should have 1.08x premium (accumulates rewards)
       const addr3 = '0x3B175474E89094C44Da98b954EedeAC495271d0F' as const;
       const rethResult = await priceFetcher.getPrice(mockClient, addr3, 'RETH', 1);
-      expect(rethResult.priceUsd).toBe(2500);
+      expect(rethResult.priceUsd).toBe(2500 * 1.08);
     });
 
     it('should return 0 for unknown tokens', async () => {

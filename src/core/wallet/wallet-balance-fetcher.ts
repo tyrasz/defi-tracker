@@ -4,6 +4,7 @@ import type { ChainId } from '@/types/chain';
 import type { TokenBalance } from '@/types/token';
 import { chainRegistry } from '@/chains';
 import { priceFetcher } from '@/core/pricing';
+import { getTokensForChain, type TokenInfo } from '@/core/tokens';
 
 // ERC20 balanceOf ABI
 const erc20BalanceOfAbi = [
@@ -15,21 +16,6 @@ const erc20BalanceOfAbi = [
     type: 'function',
   },
 ] as const;
-
-// Token metadata for our tracked tokens
-interface TrackedToken {
-  symbol: string;
-  decimals: number;
-  contractKey: 'usdc' | 'usdt' | 'dai' | 'usds' | 'usde';
-}
-
-const TRACKED_TOKENS: TrackedToken[] = [
-  { symbol: 'USDC', decimals: 6, contractKey: 'usdc' },
-  { symbol: 'USDT', decimals: 6, contractKey: 'usdt' },
-  { symbol: 'DAI', decimals: 18, contractKey: 'dai' },
-  { symbol: 'USDS', decimals: 18, contractKey: 'usds' },
-  { symbol: 'USDe', decimals: 18, contractKey: 'usde' },
-];
 
 export interface WalletBalance {
   chainId: ChainId;
@@ -161,66 +147,68 @@ class WalletBalanceFetcher {
     address: Address,
     chainId: ChainId
   ): Promise<TokenBalance[]> {
-    const chain = chainRegistry.getChain(chainId)!;
     const balances: TokenBalance[] = [];
+    const tokens = getTokensForChain(chainId);
 
-    // Build multicall for all available tokens on this chain
-    const calls: {
-      token: TrackedToken;
-      tokenAddress: Address;
-    }[] = [];
-
-    for (const token of TRACKED_TOKENS) {
-      const tokenAddress = chain.contracts[token.contractKey];
-      if (tokenAddress) {
-        calls.push({ token, tokenAddress });
-      }
-    }
-
-    if (calls.length === 0) {
+    if (tokens.length === 0) {
       return balances;
     }
 
     try {
-      // Use multicall to fetch all balances at once
-      const results = await client.multicall({
-        contracts: calls.map(({ tokenAddress }) => ({
-          address: tokenAddress,
-          abi: erc20BalanceOfAbi,
-          functionName: 'balanceOf',
-          args: [address],
-        })),
-      });
+      // Use multicall to fetch all balances at once (batch in chunks of 50 to avoid RPC limits)
+      const BATCH_SIZE = 50;
+      const tokenBatches: TokenInfo[][] = [];
 
-      // Process results and fetch prices
-      for (let i = 0; i < results.length; i++) {
-        const result = results[i];
-        const { token, tokenAddress } = calls[i];
+      for (let i = 0; i < tokens.length; i += BATCH_SIZE) {
+        tokenBatches.push(tokens.slice(i, i + BATCH_SIZE));
+      }
 
-        if (result.status === 'success') {
-          const balance = result.result as bigint;
+      const allResults: { token: TokenInfo; balance: bigint }[] = [];
 
-          if (balance > 0n) {
-            const balanceFormatted = formatUnits(balance, token.decimals);
-            const priceData = await priceFetcher.getPrice(
-              client,
-              tokenAddress,
-              token.symbol,
-              chainId
-            );
+      for (const batch of tokenBatches) {
+        const results = await client.multicall({
+          contracts: batch.map((token) => ({
+            address: token.address,
+            abi: erc20BalanceOfAbi,
+            functionName: 'balanceOf',
+            args: [address],
+          })),
+        });
 
-            balances.push({
-              address: tokenAddress,
-              symbol: token.symbol,
-              decimals: token.decimals,
-              balance,
-              balanceFormatted,
-              priceUsd: priceData.priceUsd,
-              valueUsd: parseFloat(balanceFormatted) * priceData.priceUsd,
-            });
+        for (let i = 0; i < results.length; i++) {
+          const result = results[i];
+          if (result.status === 'success') {
+            const balance = result.result as bigint;
+            if (balance > 0n) {
+              allResults.push({ token: batch[i], balance });
+            }
           }
         }
       }
+
+      // Fetch prices for tokens with balances (in parallel)
+      const pricePromises = allResults.map(async ({ token, balance }) => {
+        const balanceFormatted = formatUnits(balance, token.decimals);
+        const priceData = await priceFetcher.getPrice(
+          client,
+          token.address,
+          token.symbol,
+          chainId
+        );
+
+        return {
+          address: token.address,
+          symbol: token.symbol,
+          decimals: token.decimals,
+          balance,
+          balanceFormatted,
+          priceUsd: priceData.priceUsd,
+          valueUsd: parseFloat(balanceFormatted) * priceData.priceUsd,
+        } as TokenBalance;
+      });
+
+      const tokenBalances = await Promise.all(pricePromises);
+      balances.push(...tokenBalances);
     } catch (error) {
       console.error(
         `Error fetching token balances on chain ${chainId}:`,
@@ -228,7 +216,8 @@ class WalletBalanceFetcher {
       );
     }
 
-    return balances;
+    // Sort by value descending
+    return balances.sort((a, b) => b.valueUsd - a.valueUsd);
   }
 }
 

@@ -72,31 +72,62 @@ class PriceFetcher {
     }
 
     // Handle stablecoins with assumed $1 price
-    const stablecoins = ['USDC', 'USDT', 'DAI', 'FRAX', 'LUSD', 'BUSD', 'USDS', 'USDE'];
+    const stablecoins = [
+      'USDC', 'USDT', 'DAI', 'FRAX', 'LUSD', 'BUSD', 'USDS', 'USDE', 'SUSD',
+      'TUSD', 'USDP', 'USDC.E', 'USDBC', 'USDM', 'USDY', 'USYC', 'USTB',
+      'EURC', 'SUSD', 'SUSDE'
+    ];
     if (stablecoins.includes(symbol.toUpperCase())) {
-      this.setCachedPrice(address, chainId, 1);
+      // EUR stablecoins - approximate rate
+      const isEur = symbol.toUpperCase() === 'EURC';
+      const price = isEur ? 1.08 : 1;
+      this.setCachedPrice(address, chainId, price);
       return {
         address,
-        priceUsd: 1,
+        priceUsd: price,
         source: 'dex',
         updatedAt: Date.now(),
       };
     }
 
-    // Handle ETH derivatives
+    // Handle ETH derivatives (LSDs and wrapped ETH)
+    const ethDerivatives: Record<string, number> = {
+      'WETH': 1.0,
+      'STETH': 1.0,
+      'WSTETH': 1.15, // wstETH accumulates rewards
+      'RETH': 1.08,   // rETH accumulates rewards
+      'CBETH': 1.05,  // cbETH accumulates rewards
+      'SWETH': 1.04,
+      'ETHX': 1.02,
+      'RSWETH': 1.04,
+      'WEETH': 1.03,
+      'RSETH': 1.03,
+    };
     const ethSymbol = symbol.toUpperCase();
-    if (['STETH', 'WSTETH', 'RETH', 'CBETH'].includes(ethSymbol)) {
-      // Get ETH price and apply slight premium
+    if (ethDerivatives[ethSymbol] !== undefined) {
       const ethPrice = await getChainlinkPrice(client, 'ETH', chainId);
       if (ethPrice !== null) {
-        // LSTs typically trade at slight premium to ETH
-        const premium = ethSymbol === 'WSTETH' ? 1.15 : 1.0;
+        const premium = ethDerivatives[ethSymbol];
         const price = ethPrice * premium;
         this.setCachedPrice(address, chainId, price);
         return {
           address,
           priceUsd: price,
           source: 'dex',
+          updatedAt: Date.now(),
+        };
+      }
+    }
+
+    // Handle BTC derivatives
+    if (['WBTC', 'TBTC', 'RENBTC', 'SBTC'].includes(symbol.toUpperCase())) {
+      const btcPrice = await getChainlinkPrice(client, 'WBTC', chainId);
+      if (btcPrice !== null) {
+        this.setCachedPrice(address, chainId, btcPrice);
+        return {
+          address,
+          priceUsd: btcPrice,
+          source: 'chainlink',
           updatedAt: Date.now(),
         };
       }

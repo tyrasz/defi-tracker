@@ -223,13 +223,19 @@ export default function DashboardPage() {
                         </div>
                         <div className="text-right">
                           <p className="font-medium">{formatUsd(token.valueUsd)}</p>
-                          {token.symbol === 'ETH' ? (
+                          {token.symbol === 'ETH' && (
                             <p className="text-xs text-blue-400">
                               Stake on Lido for ~3.5% APY
                             </p>
-                          ) : (
+                          )}
+                          {['USDC', 'USDT', 'DAI', 'USDC.E', 'USDBC'].includes(token.symbol) && (
                             <p className="text-xs text-blue-400">
                               Supply on Aave for ~3-5% APY
+                            </p>
+                          )}
+                          {['WETH', 'WBTC', 'LINK', 'UNI', 'AAVE', 'CRV', 'MKR', 'SNX', 'COMP'].includes(token.symbol) && (
+                            <p className="text-xs text-blue-400">
+                              Supply on Aave for yield
                             </p>
                           )}
                         </div>
@@ -242,11 +248,8 @@ export default function DashboardPage() {
 
             <div className="mt-4 p-3 bg-green-900/20 border border-green-800 rounded">
               <p className="text-sm text-green-300">
-                <span className="font-medium">Get Started:</span> You could earn approximately{' '}
-                <span className="font-semibold text-green-400">
-                  {formatUsd(portfolio.walletBalances.totalValueUsd * 0.035)}
-                </span>
-                /year by putting these assets to work in DeFi protocols like Aave or Lido.
+                <span className="font-medium">Get Started:</span> ETH and stablecoins in your wallet
+                could be earning yield in DeFi protocols like Aave or Lido.
               </p>
             </div>
           </div>
@@ -450,13 +453,19 @@ export default function DashboardPage() {
                         </div>
                         <div className="text-right">
                           <p className="font-medium">{formatUsd(token.valueUsd)}</p>
-                          {token.symbol === 'ETH' ? (
+                          {token.symbol === 'ETH' && (
                             <p className="text-xs text-blue-400">
                               Stake on Lido for ~3.5% APY
                             </p>
-                          ) : (
+                          )}
+                          {['USDC', 'USDT', 'DAI', 'USDC.E', 'USDBC'].includes(token.symbol) && (
                             <p className="text-xs text-blue-400">
                               Supply on Aave for ~3-5% APY
+                            </p>
+                          )}
+                          {['WETH', 'WBTC', 'LINK', 'UNI', 'AAVE', 'CRV', 'MKR', 'SNX', 'COMP'].includes(token.symbol) && (
+                            <p className="text-xs text-blue-400">
+                              Supply on Aave for yield
                             </p>
                           )}
                         </div>
@@ -469,11 +478,8 @@ export default function DashboardPage() {
 
             <div className="mt-4 p-3 bg-blue-900/20 border border-blue-800 rounded">
               <p className="text-sm text-blue-300">
-                <span className="font-medium">Tip:</span> You could earn approximately{' '}
-                <span className="font-semibold text-blue-400">
-                  {formatUsd(portfolio.walletBalances.totalValueUsd * 0.035)}
-                </span>
-                /year by putting these assets to work in DeFi protocols.
+                <span className="font-medium">Tip:</span> ETH and stablecoins in your wallet
+                could be earning yield in DeFi protocols like Aave or Lido.
               </p>
             </div>
           </div>
