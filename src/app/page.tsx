@@ -9,21 +9,27 @@ export default function Home() {
   const [error, setError] = useState('');
   const router = useRouter();
 
+  const isEnsName = (input: string): boolean => {
+    return input.endsWith('.eth') || (input.includes('.') && !input.startsWith('0x'));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!address) {
-      setError('Please enter an address');
+    const trimmedAddress = address.trim();
+
+    if (!trimmedAddress) {
+      setError('Please enter an address or ENS name');
       return;
     }
 
-    if (!isAddress(address)) {
-      setError('Invalid Ethereum address');
+    if (!isAddress(trimmedAddress) && !isEnsName(trimmedAddress)) {
+      setError('Invalid Ethereum address or ENS name');
       return;
     }
 
-    router.push(`/dashboard/${address}`);
+    router.push(`/dashboard/${trimmedAddress}`);
   };
 
   return (
@@ -43,14 +49,14 @@ export default function Home() {
               htmlFor="address"
               className="block text-sm font-medium text-gray-300 mb-2"
             >
-              Wallet Address
+              Wallet Address or ENS Name
             </label>
             <input
               type="text"
               id="address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              placeholder="0x..."
+              placeholder="0x... or vitalik.eth"
               className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg
                        text-white placeholder-gray-500 focus:outline-none focus:ring-2
                        focus:ring-blue-500 focus:border-transparent"
