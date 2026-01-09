@@ -18,6 +18,20 @@ vi.mock('@/chains', () => ({
   },
 }));
 
+// Mock the coingecko module
+vi.mock('./coingecko', () => ({
+  coinGeckoPriceFetcher: {
+    getPriceById: vi.fn(() => Promise.resolve(null)),
+    getPriceByContract: vi.fn(() => Promise.resolve(null)),
+    getNativeTokenPrice: vi.fn(() => Promise.resolve(null)),
+  },
+}));
+
+// Mock the token info module
+vi.mock('@/core/tokens', () => ({
+  getTokenInfo: vi.fn(() => null),
+}));
+
 describe('PriceFetcher', () => {
   const mockClient = {} as PublicClient;
   const mockAddress = '0x6B175474E89094C44Da98b954EedeAC495271d0F' as const;
@@ -81,7 +95,7 @@ describe('PriceFetcher', () => {
       const result = await priceFetcher.getPrice(mockClient, mockAddress, 'UNKNOWN', 1);
 
       expect(result.priceUsd).toBe(0);
-      expect(result.source).toBe('dex');
+      expect(result.source).toBe('unknown');
     });
 
     it('should handle Chainlink fetch errors gracefully', async () => {

@@ -72,7 +72,8 @@ describe('Chainlink', () => {
 
     it('should return false for tokens on unsupported chains', () => {
       expect(hasChainlinkFeed('ETH', 999 as any)).toBe(false);
-      expect(hasChainlinkFeed('USDC', 56 as any)).toBe(false);
+      // BSC (56) now has USDC feed, so use a truly unsupported chain
+      expect(hasChainlinkFeed('USDC', 12345 as any)).toBe(false);
     });
 
     it('should be case insensitive', () => {

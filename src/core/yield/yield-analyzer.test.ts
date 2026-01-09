@@ -7,7 +7,8 @@ import { yieldAnalyzer } from './yield-analyzer';
 vi.mock('@/chains', () => ({
   chainRegistry: {
     getClient: vi.fn(() => ({})),
-    getSupportedChainIds: vi.fn(() => [1]),
+    getSupportedChainIds: vi.fn(() => [1, 42161]),
+    getEvmChainIds: vi.fn(() => [1, 42161]),
   },
 }));
 

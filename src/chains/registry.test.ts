@@ -134,7 +134,10 @@ describe('ChainRegistry', () => {
         expect(Array.isArray(chain.rpcUrls)).toBe(true);
         expect(chain.rpcUrls.length).toBeGreaterThan(0);
         expect(chain.blockExplorer).toBeDefined();
-        expect(chain.viemChain).toBeDefined();
+        // viemChain is only defined for EVM chains
+        if (chain.network === 'evm') {
+          expect((chain as any).viemChain).toBeDefined();
+        }
       });
     });
   });
@@ -154,11 +157,35 @@ describe('ChainRegistry', () => {
       expect(chainIds).toContain(8453);
     });
 
-    it('should return numeric chain IDs', () => {
+    it('should return chain IDs (numeric for EVM, string for non-EVM)', () => {
       const chainIds = chainRegistry.getSupportedChainIds();
       chainIds.forEach((id: ChainId) => {
+        // EVM chain IDs are numbers, non-EVM (like Solana) are strings
+        expect(typeof id === 'number' || typeof id === 'string').toBe(true);
+      });
+    });
+  });
+
+  describe('getEvmChainIds', () => {
+    it('should return only numeric EVM chain IDs', () => {
+      const evmChainIds = chainRegistry.getEvmChainIds();
+      expect(Array.isArray(evmChainIds)).toBe(true);
+      evmChainIds.forEach((id) => {
         expect(typeof id).toBe('number');
       });
+    });
+
+    it('should include all default EVM chains', () => {
+      const evmChainIds = chainRegistry.getEvmChainIds();
+      expect(evmChainIds).toContain(1);
+      expect(evmChainIds).toContain(42161);
+      expect(evmChainIds).toContain(10);
+      expect(evmChainIds).toContain(8453);
+    });
+
+    it('should not include non-EVM chains', () => {
+      const evmChainIds = chainRegistry.getEvmChainIds();
+      expect(evmChainIds).not.toContain('solana');
     });
   });
 
