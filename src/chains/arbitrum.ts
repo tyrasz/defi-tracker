@@ -1,7 +1,7 @@
 import { arbitrum } from 'viem/chains';
-import type { ChainConfig } from '@/types/chain';
+import type { EvmChainConfig } from '@/types/chain';
 
-export const arbitrumConfig: ChainConfig = {
+export const arbitrumConfig: EvmChainConfig = {
   id: 42161,
   name: 'Arbitrum',
   network: 'evm',

@@ -1,10 +1,10 @@
 import type { Address, PublicClient } from 'viem';
 import { formatUnits } from 'viem';
-import type { ChainId } from '@/types/chain';
+import type { ChainId, EvmChainId } from '@/types/chain';
 import type { TokenBalance } from '@/types/token';
 import { chainRegistry } from '@/chains';
 import { priceFetcher } from '@/core/pricing';
-import { getTokensForChain, type TokenInfo } from '@/core/tokens';
+import { getTokensForChain, getSolanaTokens, type TokenInfo, type SolanaTokenInfo } from '@/core/tokens';
 
 // ERC20 balanceOf ABI
 const erc20BalanceOfAbi = [
@@ -33,13 +33,13 @@ export interface WalletBalances {
 
 class WalletBalanceFetcher {
   /**
-   * Fetches ETH and stablecoin balances across all supported chains
+   * Fetches ETH and stablecoin balances across all supported EVM chains
    */
   async getBalances(address: Address): Promise<WalletBalances> {
-    const chainIds = chainRegistry.getSupportedChainIds();
+    const chainIds = chainRegistry.getEvmChainIds();
     const balanceResults: WalletBalance[] = [];
 
-    // Fetch balances from all chains in parallel
+    // Fetch balances from all EVM chains in parallel
     const chainPromises = chainIds.map((chainId) =>
       this.getChainBalances(address, chainId)
     );
@@ -66,22 +66,22 @@ class WalletBalanceFetcher {
   }
 
   /**
-   * Fetches balances for a single chain with automatic failover
+   * Fetches balances for a single EVM chain with automatic failover
    */
   private async getChainBalances(
     address: Address,
-    chainId: ChainId
+    chainId: EvmChainId
   ): Promise<WalletBalance> {
-    const chain = chainRegistry.getChain(chainId)!;
+    const chain = chainRegistry.getEvmChain(chainId)!;
     const balances: TokenBalance[] = [];
 
-    // Fetch ETH balance with failover
-    const ethBalance = await chainRegistry.withFailover(
+    // Fetch native token balance with failover
+    const nativeBalance = await chainRegistry.withFailover(
       chainId,
-      (client) => this.getEthBalance(client, address, chainId)
+      (client) => this.getNativeBalance(client, address, chainId)
     );
-    if (ethBalance && ethBalance.balance > 0n) {
-      balances.push(ethBalance);
+    if (nativeBalance && nativeBalance.balance > 0n) {
+      balances.push(nativeBalance);
     }
 
     // Fetch ERC20 token balances with failover
@@ -102,12 +102,12 @@ class WalletBalanceFetcher {
   }
 
   /**
-   * Fetches native ETH balance
+   * Fetches native token balance (ETH, MATIC, AVAX, BNB, etc.)
    */
-  private async getEthBalance(
+  private async getNativeBalance(
     client: PublicClient,
     address: Address,
-    chainId: ChainId
+    chainId: EvmChainId
   ): Promise<TokenBalance | null> {
     try {
       const balance = await client.getBalance({ address });
@@ -116,26 +116,47 @@ class WalletBalanceFetcher {
         return null;
       }
 
-      const balanceFormatted = formatUnits(balance, 18);
+      const chain = chainRegistry.getEvmChain(chainId)!;
+      const nativeCurrency = chain.nativeCurrency;
+      const balanceFormatted = formatUnits(balance, nativeCurrency.decimals);
+
+      // Get the symbol to use for price lookup
+      const priceSymbol = this.getNativePriceSymbol(chainId);
       const priceData = await priceFetcher.getPrice(
         client,
         '0x0000000000000000000000000000000000000000' as Address,
-        'ETH',
+        priceSymbol,
         chainId
       );
 
       return {
         address: '0x0000000000000000000000000000000000000000' as Address,
-        symbol: 'ETH',
-        decimals: 18,
+        symbol: nativeCurrency.symbol,
+        decimals: nativeCurrency.decimals,
         balance,
         balanceFormatted,
         priceUsd: priceData.priceUsd,
         valueUsd: parseFloat(balanceFormatted) * priceData.priceUsd,
       };
     } catch (error) {
-      console.error(`Error fetching ETH balance on chain ${chainId}:`, error);
+      console.error(`Error fetching native balance on chain ${chainId}:`, error);
       return null;
+    }
+  }
+
+  /**
+   * Maps chain ID to the native token symbol used for price lookup
+   */
+  private getNativePriceSymbol(chainId: EvmChainId): string {
+    switch (chainId) {
+      case 137:
+        return 'MATIC';
+      case 43114:
+        return 'AVAX';
+      case 56:
+        return 'BNB';
+      default:
+        return 'ETH';
     }
   }
 
@@ -145,7 +166,7 @@ class WalletBalanceFetcher {
   private async getTokenBalances(
     client: PublicClient,
     address: Address,
-    chainId: ChainId
+    chainId: EvmChainId
   ): Promise<TokenBalance[]> {
     const balances: TokenBalance[] = [];
     const tokens = getTokensForChain(chainId);

@@ -1,9 +1,11 @@
 import type { Address, PublicClient } from 'viem';
-import type { ChainId } from '@/types/chain';
+import type { EvmChainId } from '@/types/chain';
 import type { Position } from '@/types/portfolio';
 import type { TokenPrice } from '@/types/token';
 import { chainRegistry } from '@/chains';
 import { getChainlinkPrice, hasChainlinkFeed } from './chainlink';
+import { coinGeckoPriceFetcher } from './coingecko';
+import { getTokenInfo } from '@/core/tokens';
 
 // Price cache with TTL
 interface CachedPrice {
@@ -16,11 +18,11 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 class PriceFetcher {
   private cache: Map<string, CachedPrice> = new Map();
 
-  private getCacheKey(address: Address, chainId: ChainId): string {
+  private getCacheKey(address: Address, chainId: EvmChainId): string {
     return `${chainId}-${address.toLowerCase()}`;
   }
 
-  private getCachedPrice(address: Address, chainId: ChainId): number | null {
+  private getCachedPrice(address: Address, chainId: EvmChainId): number | null {
     const key = this.getCacheKey(address, chainId);
     const cached = this.cache.get(key);
 
@@ -33,7 +35,7 @@ class PriceFetcher {
 
   private setCachedPrice(
     address: Address,
-    chainId: ChainId,
+    chainId: EvmChainId,
     price: number
   ): void {
     const key = this.getCacheKey(address, chainId);
@@ -44,7 +46,7 @@ class PriceFetcher {
     client: PublicClient,
     address: Address,
     symbol: string,
-    chainId: ChainId
+    chainId: EvmChainId
   ): Promise<TokenPrice> {
     // Check cache first
     const cachedPrice = this.getCachedPrice(address, chainId);
@@ -120,7 +122,7 @@ class PriceFetcher {
     }
 
     // Handle BTC derivatives
-    if (['WBTC', 'TBTC', 'RENBTC', 'SBTC'].includes(symbol.toUpperCase())) {
+    if (['WBTC', 'TBTC', 'RENBTC', 'SBTC', 'BTCB'].includes(symbol.toUpperCase())) {
       const btcPrice = await getChainlinkPrice(client, 'WBTC', chainId);
       if (btcPrice !== null) {
         this.setCachedPrice(address, chainId, btcPrice);
@@ -133,23 +135,69 @@ class PriceFetcher {
       }
     }
 
-    // Fallback: return 0 (price unknown)
+    // CoinGecko fallback - try by coingecko ID from token info
+    const tokenInfo = getTokenInfo(chainId, address);
+    if (tokenInfo?.coingeckoId) {
+      const price = await coinGeckoPriceFetcher.getPriceById(tokenInfo.coingeckoId);
+      if (price !== null) {
+        this.setCachedPrice(address, chainId, price);
+        return {
+          address,
+          priceUsd: price,
+          source: 'coingecko',
+          updatedAt: Date.now(),
+        };
+      }
+    }
+
+    // CoinGecko fallback - try by contract address
+    if (address !== '0x0000000000000000000000000000000000000000') {
+      const price = await coinGeckoPriceFetcher.getPriceByContract(chainId, address);
+      if (price !== null) {
+        this.setCachedPrice(address, chainId, price);
+        return {
+          address,
+          priceUsd: price,
+          source: 'coingecko',
+          updatedAt: Date.now(),
+        };
+      }
+    }
+
+    // CoinGecko fallback - try by native token symbol (for native balances)
+    if (address === '0x0000000000000000000000000000000000000000') {
+      const nativePrice = await coinGeckoPriceFetcher.getNativeTokenPrice(symbol);
+      if (nativePrice !== null) {
+        this.setCachedPrice(address, chainId, nativePrice);
+        return {
+          address,
+          priceUsd: nativePrice,
+          source: 'coingecko',
+          updatedAt: Date.now(),
+        };
+      }
+    }
+
+    // Final fallback: return 0 (price unknown)
     return {
       address,
       priceUsd: 0,
-      source: 'dex',
+      source: 'unknown',
       updatedAt: Date.now(),
     };
   }
 
   async enrichPositionsWithPrices(positions: Position[]): Promise<void> {
-    // Group positions by chain for efficient RPC usage
-    const positionsByChain = new Map<ChainId, Position[]>();
+    // Group positions by chain for efficient RPC usage (EVM chains only)
+    const positionsByChain = new Map<EvmChainId, Position[]>();
 
     for (const position of positions) {
-      const existing = positionsByChain.get(position.chainId) || [];
+      // Only process EVM chains
+      if (typeof position.chainId !== 'number') continue;
+
+      const existing = positionsByChain.get(position.chainId as EvmChainId) || [];
       existing.push(position);
-      positionsByChain.set(position.chainId, existing);
+      positionsByChain.set(position.chainId as EvmChainId, existing);
     }
 
     // Process each chain

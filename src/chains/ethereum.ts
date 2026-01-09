@@ -1,7 +1,7 @@
 import { mainnet } from 'viem/chains';
-import type { ChainConfig } from '@/types/chain';
+import type { EvmChainConfig } from '@/types/chain';
 
-export const ethereumConfig: ChainConfig = {
+export const ethereumConfig: EvmChainConfig = {
   id: 1,
   name: 'Ethereum',
   network: 'evm',

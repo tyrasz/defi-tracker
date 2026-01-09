@@ -1,10 +1,14 @@
 import { createPublicClient, http, type PublicClient } from 'viem';
-import type { ChainConfig, ChainId } from '@/types/chain';
+import type { ChainConfig, ChainId, EvmChainId, EvmChainConfig, SolanaChainConfig } from '@/types/chain';
 import { withRetry, shouldRotateRpc } from '@/lib/utils/retry';
 import { ethereumConfig } from './ethereum';
 import { arbitrumConfig } from './arbitrum';
 import { optimismConfig } from './optimism';
 import { baseConfig } from './base';
+import { polygonConfig } from './polygon';
+import { avalancheConfig } from './avalanche';
+import { bscConfig } from './bsc';
+import { solanaConfig } from './solana';
 
 interface RpcHealth {
   failureCount: number;
@@ -17,15 +21,21 @@ const HEALTH_RESET_MS = 60000; // Reset failure count after 1 minute of no failu
 
 class ChainRegistry {
   private chains: Map<ChainId, ChainConfig> = new Map();
-  private clients: Map<ChainId, PublicClient> = new Map();
+  private clients: Map<EvmChainId, PublicClient> = new Map();
   private rpcIndex: Map<ChainId, number> = new Map();
   private rpcHealth: Map<string, RpcHealth> = new Map();
 
   constructor() {
+    // EVM chains
     this.registerChain(ethereumConfig);
     this.registerChain(arbitrumConfig);
     this.registerChain(optimismConfig);
     this.registerChain(baseConfig);
+    this.registerChain(polygonConfig);
+    this.registerChain(avalancheConfig);
+    this.registerChain(bscConfig);
+    // Non-EVM chains
+    this.registerChain(solanaConfig);
   }
 
   registerChain(config: ChainConfig): void {
@@ -37,8 +47,34 @@ class ChainRegistry {
     return this.chains.get(chainId);
   }
 
+  getEvmChain(chainId: EvmChainId): EvmChainConfig | undefined {
+    const chain = this.chains.get(chainId);
+    if (chain && chain.network === 'evm') {
+      return chain as EvmChainConfig;
+    }
+    return undefined;
+  }
+
+  getSolanaChain(): SolanaChainConfig | undefined {
+    const chain = this.chains.get('solana');
+    if (chain && chain.network === 'solana') {
+      return chain as SolanaChainConfig;
+    }
+    return undefined;
+  }
+
   getAllChains(): ChainConfig[] {
     return Array.from(this.chains.values());
+  }
+
+  getEvmChains(): EvmChainConfig[] {
+    return Array.from(this.chains.values()).filter(
+      (c): c is EvmChainConfig => c.network === 'evm'
+    );
+  }
+
+  isEvmChain(chainId: ChainId): chainId is EvmChainId {
+    return typeof chainId === 'number';
   }
 
   private getHealthKey(chainId: ChainId, rpcIndex: number): string {
@@ -95,17 +131,17 @@ class ChainRegistry {
     return false;
   }
 
-  getClient(chainId: ChainId): PublicClient {
+  getClient(chainId: EvmChainId): PublicClient {
     if (!this.clients.has(chainId)) {
       this.createClient(chainId);
     }
     return this.clients.get(chainId)!;
   }
 
-  private createClient(chainId: ChainId): void {
-    const config = this.chains.get(chainId);
+  private createClient(chainId: EvmChainId): void {
+    const config = this.getEvmChain(chainId);
     if (!config) {
-      throw new Error(`Chain ${chainId} not registered`);
+      throw new Error(`EVM Chain ${chainId} not registered`);
     }
 
     const rpcIndex = this.rpcIndex.get(chainId) || 0;
@@ -130,6 +166,15 @@ class ChainRegistry {
     this.clients.set(chainId, client as PublicClient);
   }
 
+  getSolanaRpcUrl(): string {
+    const config = this.getSolanaChain();
+    if (!config) {
+      throw new Error('Solana chain not registered');
+    }
+    const rpcIndex = this.rpcIndex.get('solana') || 0;
+    return config.rpcUrls[rpcIndex];
+  }
+
   rotateRpc(chainId: ChainId): void {
     const config = this.chains.get(chainId);
     if (!config) return;
@@ -142,18 +187,20 @@ class ChainRegistry {
     );
 
     this.rpcIndex.set(chainId, nextIndex);
-    this.clients.delete(chainId);
+    if (this.isEvmChain(chainId)) {
+      this.clients.delete(chainId);
+    }
   }
 
   /**
-   * Execute an RPC call with automatic retry and failover
+   * Execute an RPC call with automatic retry and failover (EVM chains only)
    */
   async withFailover<T>(
-    chainId: ChainId,
+    chainId: EvmChainId,
     fn: (client: PublicClient) => Promise<T>,
     options: { maxRetries?: number } = {}
   ): Promise<T> {
-    const config = this.chains.get(chainId);
+    const config = this.getEvmChain(chainId);
     const maxRpcRotations = config ? config.rpcUrls.length : 1;
     let rotations = 0;
 
@@ -190,9 +237,9 @@ class ChainRegistry {
   }
 
   /**
-   * Health check - verify RPC is responding
+   * Health check - verify RPC is responding (EVM chains only)
    */
-  async healthCheck(chainId: ChainId): Promise<boolean> {
+  async healthCheck(chainId: EvmChainId): Promise<boolean> {
     try {
       const client = this.getClient(chainId);
       await client.getBlockNumber();
@@ -206,11 +253,11 @@ class ChainRegistry {
   }
 
   /**
-   * Check health of all chains and rotate unhealthy RPCs
+   * Check health of all EVM chains and rotate unhealthy RPCs
    */
-  async healthCheckAll(): Promise<Record<ChainId, boolean>> {
+  async healthCheckAll(): Promise<Record<EvmChainId, boolean>> {
     const results: Record<number, boolean> = {};
-    const chainIds = this.getSupportedChainIds();
+    const chainIds = this.getEvmChainIds();
 
     await Promise.all(
       chainIds.map(async (chainId) => {
@@ -218,14 +265,14 @@ class ChainRegistry {
       })
     );
 
-    return results as Record<ChainId, boolean>;
+    return results as Record<EvmChainId, boolean>;
   }
 
   /**
    * Get current RPC status for monitoring
    */
   getRpcStatus(): Record<ChainId, { rpcUrl: string; health: RpcHealth }> {
-    const status: Record<number, { rpcUrl: string; health: RpcHealth }> = {};
+    const status: Record<string | number, { rpcUrl: string; health: RpcHealth }> = {};
 
     for (const chainId of this.getSupportedChainIds()) {
       const config = this.chains.get(chainId)!;
@@ -241,6 +288,12 @@ class ChainRegistry {
 
   getSupportedChainIds(): ChainId[] {
     return Array.from(this.chains.keys());
+  }
+
+  getEvmChainIds(): EvmChainId[] {
+    return Array.from(this.chains.keys()).filter(
+      (id): id is EvmChainId => typeof id === 'number'
+    );
   }
 }
 

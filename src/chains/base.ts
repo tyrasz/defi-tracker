@@ -1,7 +1,7 @@
 import { base } from 'viem/chains';
-import type { ChainConfig } from '@/types/chain';
+import type { EvmChainConfig } from '@/types/chain';
 
-export const baseConfig: ChainConfig = {
+export const baseConfig: EvmChainConfig = {
   id: 8453,
   name: 'Base',
   network: 'evm',

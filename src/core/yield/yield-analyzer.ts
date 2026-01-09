@@ -1,5 +1,5 @@
 import type { Address } from 'viem';
-import type { ChainId } from '@/types/chain';
+import type { EvmChainId } from '@/types/chain';
 import type { Position } from '@/types/portfolio';
 import type {
   YieldAnalysis,
@@ -48,7 +48,7 @@ class YieldAnalyzer {
 
   private async fetchAllYieldRates(): Promise<YieldRate[]> {
     const allRates: YieldRate[] = [];
-    const chains = chainRegistry.getSupportedChainIds();
+    const chains = chainRegistry.getEvmChainIds();
 
     for (const chainId of chains) {
       const client = chainRegistry.getClient(chainId);

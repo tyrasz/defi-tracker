@@ -3,3 +3,7 @@ export { ethereumConfig } from './ethereum';
 export { arbitrumConfig } from './arbitrum';
 export { optimismConfig } from './optimism';
 export { baseConfig } from './base';
+export { polygonConfig } from './polygon';
+export { avalancheConfig } from './avalanche';
+export { bscConfig } from './bsc';
+export { solanaConfig } from './solana';

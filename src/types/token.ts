@@ -21,6 +21,6 @@ export interface TokenBalance {
 export interface TokenPrice {
   address: Address;
   priceUsd: number;
-  source: 'chainlink' | 'dex' | 'cache';
+  source: 'chainlink' | 'dex' | 'cache' | 'coingecko' | 'unknown';
   updatedAt: number;
 }

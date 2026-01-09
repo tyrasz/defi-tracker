@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isAddress } from 'viem';
+import { isAddress, type Address } from 'viem';
 import { portfolioAggregator } from '@/core/aggregator';
 import { yieldAnalyzer } from '@/core/yield';
 import { priceFetcher } from '@/core/pricing';
 import { walletBalanceFetcher } from '@/core/wallet';
 import { serializeBigInts } from '@/lib/utils/serialize';
+import { ensResolver } from '@/core/ens';
 import type { ChainId } from '@/types/chain';
 
 interface RouteParams {
@@ -12,15 +13,36 @@ interface RouteParams {
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  const { address } = await params;
+  const { address: addressParam } = await params;
 
-  // Validate address
-  if (!isAddress(address)) {
+  // Resolve ENS name or validate address
+  let resolvedAddress: Address | null;
+  let ensName: string | null = null;
+
+  if (isAddress(addressParam)) {
+    resolvedAddress = addressParam;
+    // Optionally get ENS name for display
+    ensName = await ensResolver.getEnsName(addressParam);
+  } else if (ensResolver.isEnsName(addressParam)) {
+    // Try to resolve ENS name
+    const result = await ensResolver.resolveToAddress(addressParam);
+    resolvedAddress = result.address;
+    ensName = result.ensName;
+
+    if (!resolvedAddress) {
+      return NextResponse.json(
+        { success: false, error: `Could not resolve ENS name: ${addressParam}` },
+        { status: 400 }
+      );
+    }
+  } else {
     return NextResponse.json(
-      { success: false, error: 'Invalid Ethereum address' },
+      { success: false, error: 'Invalid Ethereum address or ENS name' },
       { status: 400 }
     );
   }
+
+  const address = resolvedAddress;
 
   // Parse query params
   const searchParams = request.nextUrl.searchParams;
@@ -82,6 +104,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         success: true,
         data: {
           ...portfolio,
+          ensName, // Include ENS name if available
           yieldAnalysis,
           walletBalances,
         },

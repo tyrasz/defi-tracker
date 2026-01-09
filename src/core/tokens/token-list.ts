@@ -1,5 +1,5 @@
 import type { Address } from 'viem';
-import type { ChainId } from '@/types/chain';
+import type { ChainId, EvmChainId } from '@/types/chain';
 
 export interface TokenInfo {
   address: Address;
@@ -149,22 +149,134 @@ const BASE_TOKENS: TokenInfo[] = [
   { address: '0x22e6966B799c4D5B13BE962E1D117b56327FDa66', symbol: 'VIRTUAL', name: 'Virtual Protocol', decimals: 18, coingeckoId: 'virtual-protocol', category: 'ai' },
 ];
 
-export const TOKEN_LISTS: Record<ChainId, TokenInfo[]> = {
+// Polygon tokens
+const POLYGON_TOKENS: TokenInfo[] = [
+  { address: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270', symbol: 'WMATIC', name: 'Wrapped MATIC', decimals: 18, coingeckoId: 'wmatic' },
+  { address: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619', symbol: 'WETH', name: 'Wrapped Ether', decimals: 18, coingeckoId: 'weth' },
+  { address: '0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6', symbol: 'WBTC', name: 'Wrapped Bitcoin', decimals: 8, coingeckoId: 'wrapped-bitcoin' },
+
+  // Stablecoins
+  { address: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359', symbol: 'USDC', name: 'USD Coin', decimals: 6, coingeckoId: 'usd-coin', category: 'stablecoin' },
+  { address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', symbol: 'USDC.e', name: 'Bridged USDC', decimals: 6, coingeckoId: 'usd-coin', category: 'stablecoin' },
+  { address: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F', symbol: 'USDT', name: 'Tether', decimals: 6, coingeckoId: 'tether', category: 'stablecoin' },
+  { address: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063', symbol: 'DAI', name: 'Dai', decimals: 18, coingeckoId: 'dai', category: 'stablecoin' },
+  { address: '0x45c32fA6DF82ead1e2EF74d17b76547EDdFaFF89', symbol: 'FRAX', name: 'Frax', decimals: 18, coingeckoId: 'frax', category: 'stablecoin' },
+
+  // DeFi
+  { address: '0x53E0bca35eC356BD5ddDFebbD1Fc0fD03FaBad39', symbol: 'LINK', name: 'Chainlink', decimals: 18, coingeckoId: 'chainlink' },
+  { address: '0xb33EaAd8d922B1083446DC23f610c2567fB5180f', symbol: 'UNI', name: 'Uniswap', decimals: 18, coingeckoId: 'uniswap', category: 'defi' },
+  { address: '0x172370d5Cd63279eFa6d502DAB29171933a610AF', symbol: 'CRV', name: 'Curve DAO', decimals: 18, coingeckoId: 'curve-dao-token', category: 'defi' },
+  { address: '0xD6DF932A45C0f255f85145f286eA0b292B21C90B', symbol: 'AAVE', name: 'Aave', decimals: 18, coingeckoId: 'aave', category: 'defi' },
+  { address: '0x831753DD7087CaC61aB5644b308642cc1c33Dc13', symbol: 'QUICK', name: 'QuickSwap', decimals: 18, coingeckoId: 'quick', category: 'defi' },
+
+  // Liquid Staking
+  { address: '0x03b54A6e9a984069379fae1a4fC4dBAE93B3bCCD', symbol: 'wstETH', name: 'Wrapped stETH', decimals: 18, coingeckoId: 'wrapped-steth', category: 'lsd' },
+  { address: '0xfa68FB4628DFF1028CFEc22b4162FCcd0d45efb6', symbol: 'MaticX', name: 'Stader MaticX', decimals: 18, coingeckoId: 'stader-maticx', category: 'lsd' },
+  { address: '0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4', symbol: 'stMATIC', name: 'Lido Staked MATIC', decimals: 18, coingeckoId: 'lido-staked-matic', category: 'lsd' },
+];
+
+// Avalanche tokens
+const AVALANCHE_TOKENS: TokenInfo[] = [
+  { address: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7', symbol: 'WAVAX', name: 'Wrapped AVAX', decimals: 18, coingeckoId: 'wrapped-avax' },
+  { address: '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB', symbol: 'WETH.e', name: 'Wrapped Ether', decimals: 18, coingeckoId: 'weth' },
+  { address: '0x50b7545627a5162F82A992c33b87aDc75187B218', symbol: 'WBTC.e', name: 'Wrapped Bitcoin', decimals: 8, coingeckoId: 'wrapped-bitcoin' },
+
+  // Stablecoins
+  { address: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E', symbol: 'USDC', name: 'USD Coin', decimals: 6, coingeckoId: 'usd-coin', category: 'stablecoin' },
+  { address: '0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664', symbol: 'USDC.e', name: 'Bridged USDC', decimals: 6, coingeckoId: 'usd-coin', category: 'stablecoin' },
+  { address: '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7', symbol: 'USDT', name: 'Tether', decimals: 6, coingeckoId: 'tether', category: 'stablecoin' },
+  { address: '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70', symbol: 'DAI.e', name: 'Dai', decimals: 18, coingeckoId: 'dai', category: 'stablecoin' },
+  { address: '0xD24C2Ad096400B6FBcd2ad8B24E7acBc21A1da64', symbol: 'FRAX', name: 'Frax', decimals: 18, coingeckoId: 'frax', category: 'stablecoin' },
+
+  // DeFi
+  { address: '0x5947BB275c521040051D82396192181b413227A3', symbol: 'LINK.e', name: 'Chainlink', decimals: 18, coingeckoId: 'chainlink' },
+  { address: '0x8729438EB15e2C8B576fCc6AeCdA6A148776C0F5', symbol: 'QI', name: 'Benqi', decimals: 18, coingeckoId: 'benqi', category: 'defi' },
+  { address: '0x63a72806098Bd3D9520cC43356dD78afe5D386D9', symbol: 'AAVE.e', name: 'Aave', decimals: 18, coingeckoId: 'aave', category: 'defi' },
+  { address: '0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd', symbol: 'JOE', name: 'Trader Joe', decimals: 18, coingeckoId: 'joe', category: 'defi' },
+  { address: '0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE', symbol: 'sAVAX', name: 'Staked AVAX', decimals: 18, coingeckoId: 'benqi-liquid-staked-avax', category: 'lsd' },
+];
+
+// BSC tokens
+const BSC_TOKENS: TokenInfo[] = [
+  { address: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c', symbol: 'WBNB', name: 'Wrapped BNB', decimals: 18, coingeckoId: 'wbnb' },
+  { address: '0x2170Ed0880ac9A755fd29B2688956BD959F933F8', symbol: 'ETH', name: 'Ethereum', decimals: 18, coingeckoId: 'ethereum' },
+  { address: '0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c', symbol: 'BTCB', name: 'Bitcoin BEP20', decimals: 18, coingeckoId: 'binance-bitcoin' },
+
+  // Stablecoins
+  { address: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d', symbol: 'USDC', name: 'USD Coin', decimals: 18, coingeckoId: 'usd-coin', category: 'stablecoin' },
+  { address: '0x55d398326f99059fF775485246999027B3197955', symbol: 'USDT', name: 'Tether', decimals: 18, coingeckoId: 'tether', category: 'stablecoin' },
+  { address: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56', symbol: 'BUSD', name: 'Binance USD', decimals: 18, coingeckoId: 'binance-usd', category: 'stablecoin' },
+  { address: '0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3', symbol: 'DAI', name: 'Dai', decimals: 18, coingeckoId: 'dai', category: 'stablecoin' },
+  { address: '0x90C97F71E18723b0Cf0dfa30ee176Ab653E89F40', symbol: 'FRAX', name: 'Frax', decimals: 18, coingeckoId: 'frax', category: 'stablecoin' },
+
+  // DeFi
+  { address: '0xF8A0BF9cF54Bb92F17374d9e9A321E6a111a51bD', symbol: 'LINK', name: 'Chainlink', decimals: 18, coingeckoId: 'chainlink' },
+  { address: '0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82', symbol: 'CAKE', name: 'PancakeSwap', decimals: 18, coingeckoId: 'pancakeswap-token', category: 'defi' },
+  { address: '0xfb6115445Bff7b52FeB98650C87f44907E58f802', symbol: 'AAVE', name: 'Aave', decimals: 18, coingeckoId: 'aave', category: 'defi' },
+  { address: '0x1D2F0da169ceB9fC7B3144628dB156f3F6c60dBE', symbol: 'XRP', name: 'XRP', decimals: 18, coingeckoId: 'ripple' },
+  { address: '0x7083609fCE4d1d8Dc0C979AAb8c869Ea2C873402', symbol: 'DOT', name: 'Polkadot', decimals: 18, coingeckoId: 'polkadot' },
+
+  // Meme
+  { address: '0xbA2aE424d960c26247Dd6c32edC70B295c744C43', symbol: 'DOGE', name: 'Dogecoin', decimals: 8, coingeckoId: 'dogecoin', category: 'meme' },
+  { address: '0x2859e4544C4bB03966803b044A93563Bd2D0DD4D', symbol: 'SHIB', name: 'Shiba Inu', decimals: 18, coingeckoId: 'shiba-inu', category: 'meme' },
+];
+
+// EVM token lists (Solana handled separately)
+export const TOKEN_LISTS: Partial<Record<ChainId, TokenInfo[]>> = {
   1: ETHEREUM_TOKENS,
   42161: ARBITRUM_TOKENS,
   10: OPTIMISM_TOKENS,
   8453: BASE_TOKENS,
+  137: POLYGON_TOKENS,
+  43114: AVALANCHE_TOKENS,
+  56: BSC_TOKENS,
 };
 
+// Solana token info (different address format)
+export interface SolanaTokenInfo {
+  address: string; // Solana addresses are base58 strings
+  symbol: string;
+  name: string;
+  decimals: number;
+  coingeckoId?: string;
+}
+
+export const SOLANA_TOKENS: SolanaTokenInfo[] = [
+  { address: 'So11111111111111111111111111111111111111112', symbol: 'SOL', name: 'Wrapped SOL', decimals: 9, coingeckoId: 'solana' },
+  { address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', symbol: 'USDC', name: 'USD Coin', decimals: 6, coingeckoId: 'usd-coin' },
+  { address: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', symbol: 'USDT', name: 'Tether', decimals: 6, coingeckoId: 'tether' },
+  { address: 'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So', symbol: 'mSOL', name: 'Marinade Staked SOL', decimals: 9, coingeckoId: 'msol' },
+  { address: 'J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn', symbol: 'JitoSOL', name: 'Jito Staked SOL', decimals: 9, coingeckoId: 'jito-staked-sol' },
+  { address: 'bSo13r4TkiE4KumL71LsHTPpL2euBYLFx6h9HP3piy1', symbol: 'bSOL', name: 'BlazeStake Staked SOL', decimals: 9, coingeckoId: 'blazestake-staked-sol' },
+  { address: '7dHbWXmci3dT8UFYWYZweBLXgycu7Y3iL6trKn1Y7ARj', symbol: 'stSOL', name: 'Lido Staked SOL', decimals: 9, coingeckoId: 'lido-staked-sol' },
+  { address: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN', symbol: 'JUP', name: 'Jupiter', decimals: 6, coingeckoId: 'jupiter-exchange-solana' },
+  { address: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', symbol: 'BONK', name: 'Bonk', decimals: 5, coingeckoId: 'bonk' },
+  { address: 'HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3', symbol: 'PYTH', name: 'Pyth Network', decimals: 6, coingeckoId: 'pyth-network' },
+  { address: 'rndrizKT3MK1iimdxRdWabcF7Zg7AR5T4nud4EkHBof', symbol: 'RNDR', name: 'Render', decimals: 8, coingeckoId: 'render-token' },
+  { address: 'RLBxxFkseAZ4RgJH3Sqn8jXxhmGoz9jWxDNJMh8pL7a', symbol: 'RAYDIUM', name: 'Raydium', decimals: 6, coingeckoId: 'raydium' },
+  { address: 'orcaEKTdK7LKz57vaAYr9QeNsVEPfiu6QeMU1kektZE', symbol: 'ORCA', name: 'Orca', decimals: 6, coingeckoId: 'orca' },
+];
+
 export function getTokensForChain(chainId: ChainId): TokenInfo[] {
+  if (chainId === 'solana') {
+    return []; // Solana tokens are handled separately
+  }
   return TOKEN_LISTS[chainId] || [];
 }
 
-export function getAllTokenAddresses(chainId: ChainId): Address[] {
+export function getSolanaTokens(): SolanaTokenInfo[] {
+  return SOLANA_TOKENS;
+}
+
+export function getAllTokenAddresses(chainId: EvmChainId): Address[] {
   return getTokensForChain(chainId).map(t => t.address);
 }
 
-export function getTokenInfo(chainId: ChainId, address: Address): TokenInfo | undefined {
+export function getTokenInfo(chainId: EvmChainId, address: Address): TokenInfo | undefined {
   const tokens = getTokensForChain(chainId);
   return tokens.find(t => t.address.toLowerCase() === address.toLowerCase());
+}
+
+export function getSolanaTokenInfo(address: string): SolanaTokenInfo | undefined {
+  return SOLANA_TOKENS.find(t => t.address === address);
 }

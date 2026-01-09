@@ -1,5 +1,5 @@
 import type { Address } from 'viem';
-import type { ChainId } from '@/types/chain';
+import type { ChainId, EvmChainId } from '@/types/chain';
 import type {
   Portfolio,
   Position,
@@ -14,11 +14,13 @@ class PortfolioAggregator {
     address: Address,
     chainIds?: ChainId[]
   ): Promise<Portfolio> {
-    const chains = chainIds ?? chainRegistry.getSupportedChainIds();
+    // Only process EVM chains for protocol positions (Solana protocols not yet supported)
+    const allChains = chainIds ?? chainRegistry.getSupportedChainIds();
+    const evmChains = allChains.filter((id): id is EvmChainId => typeof id === 'number');
 
-    // Fetch positions from all chains in parallel
+    // Fetch positions from all EVM chains in parallel
     const chainResults = await Promise.all(
-      chains.map((chainId) => this.getChainPositions(address, chainId))
+      evmChains.map((chainId) => this.getChainPositions(address, chainId))
     );
 
     // Flatten all positions
@@ -31,7 +33,7 @@ class PortfolioAggregator {
     );
 
     // Group by chain
-    const byChain = this.groupByChain(allPositions, chains);
+    const byChain = this.groupByChain(allPositions, evmChains);
 
     // Group by protocol
     const byProtocol = this.groupByProtocol(allPositions);
@@ -52,7 +54,7 @@ class PortfolioAggregator {
 
   private async getChainPositions(
     address: Address,
-    chainId: ChainId
+    chainId: EvmChainId
   ): Promise<Position[]> {
     const client = chainRegistry.getClient(chainId);
     const adapters = protocolRegistry.getAdaptersForChain(chainId);
@@ -97,8 +99,8 @@ class PortfolioAggregator {
 
   private groupByChain(
     positions: Position[],
-    chains: ChainId[]
-  ): Record<number, ChainPortfolio> {
+    chains: EvmChainId[]
+  ): Record<EvmChainId, ChainPortfolio> {
     const result: Record<number, ChainPortfolio> = {};
 
     for (const chainId of chains) {
@@ -113,7 +115,7 @@ class PortfolioAggregator {
       };
     }
 
-    return result;
+    return result as Record<EvmChainId, ChainPortfolio>;
   }
 
   private groupByProtocol(

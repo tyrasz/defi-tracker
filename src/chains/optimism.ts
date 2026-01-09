@@ -1,7 +1,7 @@
 import { optimism } from 'viem/chains';
-import type { ChainConfig } from '@/types/chain';
+import type { EvmChainConfig } from '@/types/chain';
 
-export const optimismConfig: ChainConfig = {
+export const optimismConfig: EvmChainConfig = {
   id: 10,
   name: 'Optimism',
   network: 'evm',
