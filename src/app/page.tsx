@@ -13,6 +13,12 @@ export default function Home() {
     return input.endsWith('.eth') || (input.includes('.') && !input.startsWith('0x'));
   };
 
+  const isSolanaAddress = (input: string): boolean => {
+    // Solana addresses are base58 encoded, 32-44 chars, no 0x prefix
+    const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+    return base58Regex.test(input);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -24,8 +30,8 @@ export default function Home() {
       return;
     }
 
-    if (!isAddress(trimmedAddress) && !isEnsName(trimmedAddress)) {
-      setError('Invalid Ethereum address or ENS name');
+    if (!isAddress(trimmedAddress) && !isEnsName(trimmedAddress) && !isSolanaAddress(trimmedAddress)) {
+      setError('Invalid Ethereum address, ENS name, or Solana address');
       return;
     }
 
@@ -49,14 +55,14 @@ export default function Home() {
               htmlFor="address"
               className="block text-sm font-medium text-gray-300 mb-2"
             >
-              Wallet Address or ENS Name
+              Wallet Address (EVM, Solana, or ENS)
             </label>
             <input
               type="text"
               id="address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              placeholder="0x... or vitalik.eth"
+              placeholder="0x..., vitalik.eth, or Solana address"
               className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg
                        text-white placeholder-gray-500 focus:outline-none focus:ring-2
                        focus:ring-blue-500 focus:border-transparent"
@@ -78,7 +84,7 @@ export default function Home() {
         <div className="p-6 bg-gray-900 rounded-lg border border-gray-800">
           <h3 className="text-lg font-semibold mb-2">Multi-Chain</h3>
           <p className="text-gray-400 text-sm">
-            Track positions across Ethereum, Arbitrum, Optimism, and Base
+            Track across Ethereum, Arbitrum, Optimism, Base, Polygon, Avalanche, BSC, and Solana
           </p>
         </div>
         <div className="p-6 bg-gray-900 rounded-lg border border-gray-800">

@@ -4,9 +4,16 @@ import { portfolioAggregator } from '@/core/aggregator';
 import { yieldAnalyzer } from '@/core/yield';
 import { priceFetcher } from '@/core/pricing';
 import { walletBalanceFetcher } from '@/core/wallet';
+import { solanaBalanceFetcher } from '@/core/wallet/solana-balance-fetcher';
 import { serializeBigInts } from '@/lib/utils/serialize';
 import { ensResolver } from '@/core/ens';
 import type { ChainId } from '@/types/chain';
+
+// Check if address is a Solana address (base58, 32-44 chars)
+function isSolanaAddress(input: string): boolean {
+  const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+  return base58Regex.test(input);
+}
 
 interface RouteParams {
   params: Promise<{ address: string }>;
@@ -14,6 +21,11 @@ interface RouteParams {
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   const { address: addressParam } = await params;
+
+  // Check if this is a Solana address
+  if (isSolanaAddress(addressParam)) {
+    return handleSolanaRequest(addressParam);
+  }
 
   // Resolve ENS name or validate address
   let resolvedAddress: Address | null;
@@ -37,7 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
   } else {
     return NextResponse.json(
-      { success: false, error: 'Invalid Ethereum address or ENS name' },
+      { success: false, error: 'Invalid Ethereum address, ENS name, or Solana address' },
       { status: 400 }
     );
   }
@@ -117,6 +129,90 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       {
         success: false,
         error: 'Failed to fetch portfolio',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Handle Solana address requests
+ */
+async function handleSolanaRequest(address: string) {
+  try {
+    const solanaBalances = await solanaBalanceFetcher.getBalances(address);
+
+    // Convert Solana balances to a portfolio-like response
+    const positions = solanaBalances.balances.balances.map((token, index) => ({
+      id: `solana-wallet-${index}`,
+      chainId: 'solana' as const,
+      protocol: {
+        id: 'wallet',
+        name: 'Wallet',
+        logo: '',
+      },
+      type: 'wallet' as const,
+      tokens: [
+        {
+          address: token.address,
+          symbol: token.symbol,
+          decimals: token.decimals,
+          balance: token.balance,
+          balanceFormatted: token.balanceFormatted,
+          priceUsd: token.priceUsd,
+          valueUsd: token.valueUsd,
+        },
+      ],
+      valueUsd: token.valueUsd,
+      yield: null,
+    }));
+
+    return NextResponse.json(
+      serializeBigInts({
+        success: true,
+        data: {
+          address,
+          network: 'solana',
+          totalValueUsd: solanaBalances.totalValueUsd,
+          positions,
+          byChain: {
+            solana: {
+              chainId: 'solana',
+              chainName: 'Solana',
+              totalValueUsd: solanaBalances.totalValueUsd,
+              positions,
+            },
+          },
+          byProtocol: {
+            wallet: {
+              protocolId: 'wallet',
+              protocolName: 'Wallet',
+              totalValueUsd: solanaBalances.totalValueUsd,
+              positions,
+            },
+          },
+          byType: {
+            wallet: positions,
+          },
+          walletBalances: {
+            address,
+            balances: [solanaBalances.balances],
+            totalValueUsd: solanaBalances.totalValueUsd,
+            fetchedAt: solanaBalances.fetchedAt,
+          },
+          yieldAnalysis: null, // Solana DeFi protocols not yet supported
+          fetchedAt: solanaBalances.fetchedAt,
+        },
+      })
+    );
+  } catch (error) {
+    console.error('Solana portfolio fetch error:', error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to fetch Solana portfolio',
         message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
