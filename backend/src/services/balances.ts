@@ -150,7 +150,7 @@ class BalanceService {
       if (balance === 0n) return null;
 
       const balanceFormatted = formatUnits(balance, 18);
-      const priceUsd = await pricingService.getNativeTokenPrice(config.nativeSymbol) || 0;
+      const priceUsd = await pricingService.getPrice(config.nativeSymbol, chainId) || 0;
 
       return {
         address: '0x0000000000000000000000000000000000000000',
@@ -196,13 +196,8 @@ class BalanceService {
           if (balance > 0n) {
             const balanceFormatted = formatUnits(balance, token.decimals);
 
-            // Get price
-            let priceUsd = 0;
-            if (pricingService.isStablecoin(token.symbol)) {
-              priceUsd = pricingService.getStablecoinPrice(token.symbol);
-            } else if (token.coingeckoId) {
-              priceUsd = await pricingService.getPriceById(token.coingeckoId) || 0;
-            }
+            // Get price using new unified pricing (Chainlink → DefiLlama → CoinGecko)
+            const priceUsd = await pricingService.getPrice(token.symbol, chainId) || 0;
 
             balances.push({
               address: token.address,

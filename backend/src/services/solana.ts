@@ -103,7 +103,7 @@ class SolanaService {
       if (lamports === 0n) return null;
 
       const balanceFormatted = (Number(lamports) / 1e9).toString();
-      const priceUsd = await pricingService.getPriceById('solana') || 0;
+      const priceUsd = await pricingService.getPrice('SOL') || 0;
 
       return {
         address: 'So11111111111111111111111111111111111111112',
@@ -174,10 +174,7 @@ class SolanaService {
 
         const balanceFormatted = tokenAmount.uiAmountString || '0';
 
-        let priceUsd = 0;
-        if (tokenInfo.coingeckoId) {
-          priceUsd = await pricingService.getPriceById(tokenInfo.coingeckoId) || 0;
-        }
+        const priceUsd = await pricingService.getPrice(tokenInfo.symbol) || 0;
 
         balances.push({
           address: mint,
