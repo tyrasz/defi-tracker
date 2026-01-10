@@ -65,19 +65,46 @@ class SolanaService {
       console.error('Error fetching Solana balances:', error);
     }
 
-    const totalValueUsd = balances.reduce((sum, b) => sum + b.valueUsd, 0);
+    // Aggregate balances by token mint address (wallets can have multiple token accounts)
+    const aggregatedBalances = this.aggregateBalances(balances);
+
+    const totalValueUsd = aggregatedBalances.reduce((sum, b) => sum + b.valueUsd, 0);
 
     const result: SolanaBalances = {
       address,
       chainId: 'solana',
       chainName: 'Solana',
-      balances: balances.sort((a, b) => b.valueUsd - a.valueUsd),
+      balances: aggregatedBalances.sort((a, b) => b.valueUsd - a.valueUsd),
       totalValueUsd,
       fetchedAt: Date.now(),
     };
 
     cache.set(cacheKey, result, CACHE_TTL.BALANCE);
     return result;
+  }
+
+  /**
+   * Aggregate multiple token accounts for the same mint into a single balance
+   */
+  private aggregateBalances(balances: SolanaTokenBalance[]): SolanaTokenBalance[] {
+    const aggregated = new Map<string, SolanaTokenBalance>();
+
+    for (const balance of balances) {
+      const existing = aggregated.get(balance.address);
+      if (existing) {
+        // Add to existing balance
+        const newBalance = BigInt(existing.balance) + BigInt(balance.balance);
+        const newBalanceFormatted = (Number(newBalance) / Math.pow(10, balance.decimals)).toString();
+        existing.balance = newBalance.toString();
+        existing.balanceFormatted = newBalanceFormatted;
+        existing.valueUsd = parseFloat(newBalanceFormatted) * existing.priceUsd;
+      } else {
+        // First occurrence - clone the object
+        aggregated.set(balance.address, { ...balance });
+      }
+    }
+
+    return Array.from(aggregated.values());
   }
 
   private async getSolBalance(address: string): Promise<SolanaTokenBalance | null> {
