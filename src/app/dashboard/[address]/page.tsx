@@ -58,7 +58,13 @@ export default function DashboardPage() {
           setLoadingMessage(messages[messageIndex]);
         }, 3000);
 
-        const res = await fetch(`/api/v1/portfolio/${address}`, {
+        // Use external API if configured, otherwise use local API routes
+        const apiBase = process.env.NEXT_PUBLIC_API_URL || '';
+        const apiUrl = apiBase
+          ? `${apiBase}/api/portfolio/${address}`
+          : `/api/v1/portfolio/${address}`;
+
+        const res = await fetch(apiUrl, {
           signal: controller.signal,
         });
 
