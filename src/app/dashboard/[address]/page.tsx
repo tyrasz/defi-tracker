@@ -64,13 +64,19 @@ export default function DashboardPage() {
           ? `${apiBase}/api/portfolio/${address}`
           : `/api/v1/portfolio/${address}`;
 
+        // Debug logging
+        console.log('[DeFi Tracker] API Base:', apiBase || '(not set - using Vercel)');
+        console.log('[DeFi Tracker] Fetching:', apiUrl);
+
         const res = await fetch(apiUrl, {
           signal: controller.signal,
         });
 
+        console.log('[DeFi Tracker] Response status:', res.status);
         clearInterval(messageInterval);
 
         const json = await res.json();
+        console.log('[DeFi Tracker] Response data:', json.success ? 'success' : json.error || json.message);
 
         if (!json.success) {
           setError(json.message || json.error || 'Failed to fetch portfolio');
@@ -78,10 +84,11 @@ export default function DashboardPage() {
           setData(json);
         }
       } catch (err) {
+        console.error('[DeFi Tracker] Fetch error:', err);
         if (err instanceof Error && err.name === 'AbortError') {
           return;
         }
-        setError('Failed to connect to API. Please try again.');
+        setError(`Failed to connect to API: ${err instanceof Error ? err.message : 'Unknown error'}`);
       } finally {
         setLoading(false);
       }
@@ -91,6 +98,9 @@ export default function DashboardPage() {
 
     return () => controller.abort();
   }, [address]);
+
+  // Determine API source for display
+  const apiSource = process.env.NEXT_PUBLIC_API_URL ? 'Render' : 'Vercel';
 
   if (loading) {
     return (
@@ -104,6 +114,7 @@ export default function DashboardPage() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
           <p className="text-gray-400">{loadingMessage}</p>
           <p className="text-gray-500 text-sm mt-2">This may take up to a minute...</p>
+          <p className="text-gray-600 text-xs mt-4">API: {apiSource}</p>
         </div>
       </div>
     );
