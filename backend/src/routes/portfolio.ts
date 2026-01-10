@@ -31,18 +31,39 @@ router.get('/:address', async (req: Request, res: Response) => {
     try {
       const balances = await solanaService.getBalances(address);
 
-      return res.json(
-        serializeBigInts({
-          success: true,
-          data: {
-            address,
-            network: 'solana',
+      // Build portfolio structure matching frontend expectations
+      const portfolio = {
+        address,
+        network: 'solana',
+        totalValueUsd: balances.totalValueUsd,
+        positions: [] as unknown[], // No DeFi positions tracked yet for Solana
+        byChain: {
+          solana: {
+            chainId: 'solana',
+            chainName: 'Solana',
             totalValueUsd: balances.totalValueUsd,
-            walletBalances: balances,
-            fetchedAt: balances.fetchedAt,
+            positions: [],
           },
-        })
-      );
+        },
+        byProtocol: {},
+        walletBalances: {
+          address,
+          balances: [
+            {
+              chainId: 'solana',
+              chainName: 'Solana',
+              balances: balances.balances,
+              totalValueUsd: balances.totalValueUsd,
+            },
+          ],
+          totalValueUsd: balances.totalValueUsd,
+          fetchedAt: balances.fetchedAt,
+        },
+        yieldAnalysis: null,
+        fetchedAt: balances.fetchedAt,
+      };
+
+      return res.json(serializeBigInts({ success: true, data: portfolio }));
     } catch (error) {
       console.error('Solana portfolio error:', error);
       return res.status(500).json({
@@ -69,18 +90,35 @@ router.get('/:address', async (req: Request, res: Response) => {
   try {
     const walletBalances = await balanceService.getBalances(address as Address, chainIds);
 
-    return res.json(
-      serializeBigInts({
-        success: true,
-        data: {
-          address,
-          network: 'evm',
-          totalValueUsd: walletBalances.totalValueUsd,
-          walletBalances,
-          fetchedAt: walletBalances.fetchedAt,
-        },
-      })
-    );
+    // Build portfolio structure matching frontend expectations
+    const portfolio = {
+      address,
+      network: 'evm',
+      totalValueUsd: walletBalances.totalValueUsd,
+      positions: [] as unknown[], // Wallet balances only, no DeFi positions from this backend
+      byChain: Object.fromEntries(
+        walletBalances.balances.map((chain) => [
+          chain.chainId,
+          {
+            chainId: chain.chainId,
+            chainName: chain.chainName,
+            totalValueUsd: chain.totalValueUsd,
+            positions: [],
+          },
+        ])
+      ),
+      byProtocol: {},
+      walletBalances: {
+        address,
+        balances: walletBalances.balances,
+        totalValueUsd: walletBalances.totalValueUsd,
+        fetchedAt: walletBalances.fetchedAt,
+      },
+      yieldAnalysis: null,
+      fetchedAt: walletBalances.fetchedAt,
+    };
+
+    return res.json(serializeBigInts({ success: true, data: portfolio }));
   } catch (error) {
     console.error('Portfolio error:', error);
     return res.status(500).json({
