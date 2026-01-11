@@ -1,9 +1,10 @@
 services:
   - type: web
-    name: defi-tracker-api
-    env: node
+    name: defi-tracker-backend
+    runtime: node
     region: oregon
     plan: free
+    rootDir: backend
     buildCommand: npm install && npm run build
     startCommand: npm start
     healthCheckPath: /health
