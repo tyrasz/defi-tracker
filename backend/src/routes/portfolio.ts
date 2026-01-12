@@ -3,6 +3,7 @@ import { isAddress, type Address } from 'viem';
 import { balanceService } from '../services/balances';
 import { solanaService } from '../services/solana';
 import { getSolanaProtocolPositions, SolanaPosition } from '../services/solana-protocols';
+import { getEvmProtocolPositions, EvmPosition } from '../services/evm-protocols';
 import type { EvmChainId } from '../services/chains';
 
 const router = Router();
@@ -119,26 +120,68 @@ router.get('/:address', async (req: Request, res: Response) => {
   }
 
   try {
-    const walletBalances = await balanceService.getBalances(address as Address, chainIds);
+    // Fetch wallet balances and protocol positions in parallel
+    const [walletBalances, protocolPositions] = await Promise.all([
+      balanceService.getBalances(address as Address, chainIds),
+      getEvmProtocolPositions(address as Address, chainIds),
+    ]);
+
+    // Calculate total value including protocol positions
+    const positionsValue = protocolPositions.reduce((sum, p) => sum + Math.abs(p.valueUsd), 0);
+    const totalValueUsd = walletBalances.totalValueUsd + positionsValue;
+
+    // Group positions by protocol
+    const byProtocol: Record<string, {
+      protocolId: string;
+      protocolName: string;
+      totalValueUsd: number;
+      positions: EvmPosition[];
+    }> = {};
+
+    for (const position of protocolPositions) {
+      const protocolId = position.protocol.id;
+      if (!byProtocol[protocolId]) {
+        byProtocol[protocolId] = {
+          protocolId,
+          protocolName: position.protocol.name,
+          totalValueUsd: 0,
+          positions: [],
+        };
+      }
+      byProtocol[protocolId].positions.push(position);
+      byProtocol[protocolId].totalValueUsd += Math.abs(position.valueUsd);
+    }
+
+    // Group positions by chain
+    const positionsByChain = new Map<EvmChainId, EvmPosition[]>();
+    for (const position of protocolPositions) {
+      const chainPositions = positionsByChain.get(position.chainId) || [];
+      chainPositions.push(position);
+      positionsByChain.set(position.chainId, chainPositions);
+    }
 
     // Build portfolio structure matching frontend expectations
     const portfolio = {
       address,
       network: 'evm',
-      totalValueUsd: walletBalances.totalValueUsd,
-      positions: [] as unknown[], // Wallet balances only, no DeFi positions from this backend
+      totalValueUsd,
+      positions: protocolPositions,
       byChain: Object.fromEntries(
-        walletBalances.balances.map((chain) => [
-          chain.chainId,
-          {
-            chainId: chain.chainId,
-            chainName: chain.chainName,
-            totalValueUsd: chain.totalValueUsd,
-            positions: [],
-          },
-        ])
+        walletBalances.balances.map((chain) => {
+          const chainPositions = positionsByChain.get(chain.chainId as EvmChainId) || [];
+          const chainPositionsValue = chainPositions.reduce((sum, p) => sum + Math.abs(p.valueUsd), 0);
+          return [
+            chain.chainId,
+            {
+              chainId: chain.chainId,
+              chainName: chain.chainName,
+              totalValueUsd: chain.totalValueUsd + chainPositionsValue,
+              positions: chainPositions,
+            },
+          ];
+        })
       ),
-      byProtocol: {},
+      byProtocol,
       walletBalances: {
         address,
         balances: walletBalances.balances,

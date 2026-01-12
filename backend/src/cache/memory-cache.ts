@@ -72,6 +72,8 @@ export const CACHE_TTL = {
   PORTFOLIO: 2 * 60 * 1000,  // 2 minutes for portfolio data
   ENS: 30 * 60 * 1000,       // 30 minutes for ENS resolution
   BALANCE: 1 * 60 * 1000,    // 1 minute for balances
+  POSITIONS: 3 * 60 * 1000,  // 3 minutes for DeFi positions
+  APY: 15 * 60 * 1000,       // 15 minutes for APY data
 };
 
 // Singleton instance

@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { Portfolio } from '@/types/portfolio';
 import type { YieldAnalysis } from '@/types/yield';
 import type { WalletBalances } from '@/core/wallet';
+import { ErrorDisplay, StaleDataBanner, classifyError } from '@/components/ErrorDisplay';
 
 interface PortfolioResponse {
   success: boolean;
@@ -120,7 +121,19 @@ export default function DashboardPage() {
     );
   }
 
+  // Retry function
+  const handleRetry = useCallback(() => {
+    setError(null);
+    setLoading(true);
+    setLoadingMessage('Retrying...');
+    // Re-trigger the effect by updating a dependency
+    window.location.reload();
+  }, []);
+
   if (error) {
+    const errorType = classifyError(error);
+    const retryDelay = errorType === 'rate_limit' ? 30 : 0;
+
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
@@ -128,16 +141,12 @@ export default function DashboardPage() {
           <p className="text-gray-400 font-mono text-sm">{address}</p>
         </div>
 
-        <div className="p-6 bg-red-900/20 border border-red-800 rounded-lg">
-          <h2 className="text-lg font-semibold text-red-400">Error</h2>
-          <p className="text-gray-300 mt-2">{error}</p>
-          <Link
-            href="/"
-            className="inline-block mt-4 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded transition-colors"
-          >
-            Try another address
-          </Link>
-        </div>
+        <ErrorDisplay
+          error={error}
+          errorType={errorType}
+          onRetry={handleRetry}
+          retryCountdown={retryDelay}
+        />
       </div>
     );
   }

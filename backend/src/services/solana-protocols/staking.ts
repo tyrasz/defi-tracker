@@ -1,14 +1,13 @@
 // Liquid Staking Protocol Detection (Marinade, Jito)
 
 import { pricingService } from '../pricing';
+import { SOLANA_RPC } from '../solana-rpc';
 import {
   SolanaPosition,
   PROTOCOLS,
   STAKING_TOKENS,
   ESTIMATED_APYS,
 } from './types';
-
-const SOLANA_RPC = 'https://api.mainnet-beta.solana.com';
 
 interface TokenAccountInfo {
   mint: string;

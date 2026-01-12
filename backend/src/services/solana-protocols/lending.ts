@@ -1,6 +1,7 @@
 // Lending Protocol Detection (Kamino, Solend, MarginFi)
 
 import { pricingService } from '../pricing';
+import { SOLANA_RPC } from '../solana-rpc';
 import {
   SolanaPosition,
   SolanaTokenPosition,
@@ -8,8 +9,6 @@ import {
   PROGRAM_IDS,
   ESTIMATED_APYS,
 } from './types';
-
-const SOLANA_RPC = 'https://api.mainnet-beta.solana.com';
 
 // Known reserve/market token mappings for lending protocols
 const KAMINO_RESERVES: Record<string, { symbol: string; decimals: number }> = {

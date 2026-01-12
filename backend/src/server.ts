@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import portfolioRouter from './routes/portfolio';
 import { cache } from './cache/memory-cache';
+import { rateLimit, rateLimitConfigs } from './middleware/rate-limit';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -9,6 +10,9 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Trust proxy for correct IP detection behind reverse proxy
+app.set('trust proxy', 1);
 
 // Request logging
 app.use((req, res, next) => {
@@ -20,8 +24,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
-app.use('/api/portfolio', portfolioRouter);
+// Routes with rate limiting
+app.use('/api/portfolio', rateLimit(rateLimitConfigs.standard), portfolioRouter);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -35,13 +39,13 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Cache stats endpoint
-app.get('/api/cache/stats', (req, res) => {
+// Cache stats endpoint (with light rate limiting)
+app.get('/api/cache/stats', rateLimit(rateLimitConfigs.light), (req, res) => {
   res.json(cache.stats());
 });
 
-// Clear cache endpoint (be careful in production)
-app.post('/api/cache/clear', (req, res) => {
+// Clear cache endpoint (with heavy rate limiting - be careful in production)
+app.post('/api/cache/clear', rateLimit(rateLimitConfigs.heavy), (req, res) => {
   cache.clear();
   res.json({ success: true, message: 'Cache cleared' });
 });

@@ -1,7 +1,6 @@
 import { pricingService } from './pricing';
 import { cache, CACHE_TTL } from '../cache/memory-cache';
-
-const SOLANA_RPC = 'https://api.mainnet-beta.solana.com';
+import { SOLANA_RPC } from './solana-rpc';
 
 interface SolanaTokenInfo {
   address: string;
